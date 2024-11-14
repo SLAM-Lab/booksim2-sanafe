@@ -120,9 +120,12 @@ public:
 
   inline int GetID( ) const {return _id;}
 
-
   virtual int GetUsedCredit(int o) const = 0;
   virtual int GetBufferOccupancy(int i) const = 0;
+
+  // Added jboyle - false unless implemented
+  virtual bool _rxBusy() const { return false; }
+
 
 #ifdef TRACK_BUFFERS
   virtual int GetUsedCreditForClass(int output, int cl) const = 0;

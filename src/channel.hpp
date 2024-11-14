@@ -111,6 +111,7 @@ void Channel<T>::WriteOutputs() {
   if(_wait_queue.empty()) {
     return;
   }
+
   pair<int, T *> const & item = _wait_queue.front();
   int const & time = item.first;
   if(GetSimTime() < time) {

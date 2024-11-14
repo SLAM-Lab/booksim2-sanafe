@@ -152,6 +152,8 @@ void Network::_Alloc( )
     _inject_cred[s] = new CreditChannel(this, name.str());
     _timed_modules.push_back(_inject_cred[s]);
   }
+  // TODO: here we set up the _eject channels that outputs the flits from the
+  //  network to the cores. Maybe here we can set the output buffer size!
   _eject.resize(_nodes);
   _eject_cred.resize(_nodes);
   for ( int d = 0; d < _nodes; ++d ) {

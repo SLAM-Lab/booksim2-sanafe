@@ -1657,7 +1657,7 @@ bool TrafficManager::Run( )
             packets_left |= !_total_in_flight_flits[c].empty();
         }
 
-        while( packets_left ) { 
+        while( packets_left || _Pending() ) { 
             _Step( ); 
 
             ++empty_steps;

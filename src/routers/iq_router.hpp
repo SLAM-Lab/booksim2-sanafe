@@ -107,6 +107,8 @@ class IQRouter : public Router {
   vector<vector<int> > _noq_next_vc_start;
   vector<vector<int> > _noq_next_vc_end;
 
+
+  vector<int> _receiver_busy_cycles;
 #ifdef TRACK_FLOWS
   vector<vector<queue<int> > > _outstanding_classes;
 #endif
@@ -115,6 +117,7 @@ class IQRouter : public Router {
   bool _ReceiveCredits( );
 
   virtual void _InternalStep( );
+  bool _rxBusy() const override;
 
   bool _SWAllocAddReq(int input, int vc, int output);
 
@@ -177,6 +180,8 @@ public:
 
   SwitchMonitor const * const GetSwitchMonitor() const {return _switchMonitor;}
   BufferMonitor const * const GetBufferMonitor() const {return _bufferMonitor;}
+
+  vector<queue<Credit*>> _pending_credits;
 
 };
 

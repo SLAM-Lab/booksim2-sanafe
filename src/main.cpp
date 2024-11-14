@@ -49,6 +49,7 @@
 #include "traffic.hpp"
 #include "booksim_config.hpp"
 #include "trafficmanager.hpp"
+#include "trafficmanager_spike.hpp"
 #include "random_utils.hpp"
 #include "network.hpp"
 #include "injection.hpp"
@@ -114,7 +115,7 @@ bool Simulate( BookSimConfig const & config )
    */
 
   assert(trafficManager == NULL);
-  trafficManager = TrafficManager::New( config, net ) ;
+  trafficManager = TrafficManagerSpike::New( config, net ) ;
 
   /*Start the simulation run
    */
@@ -171,6 +172,8 @@ int main( int argc, char **argv )
   gTrace = (config.GetInt("viewer_trace") > 0);
   
   string watch_out_file = config.GetStr( "watch_out" );
+  gWatchOut = &cout;
+  /*
   if(watch_out_file == "") {
     gWatchOut = NULL;
   } else if(watch_out_file == "-") {
@@ -178,7 +181,7 @@ int main( int argc, char **argv )
   } else {
     gWatchOut = new ofstream(watch_out_file.c_str());
   }
-  
+  */
 
   /*configure and run the simulator
    */

@@ -265,7 +265,7 @@ protected:
   virtual void _RetireFlit( Flit *f, int dest );
 
   void _Inject();
-  void _Step( );
+  virtual void _Step( );
 
   bool _PacketsOutstanding( ) const;
   
@@ -296,9 +296,9 @@ public:
 
   TrafficManager( const Configuration &config, const vector<Network *> & net );
   virtual ~TrafficManager( );
+  virtual bool _Pending() { return false; }
 
-  bool Run( );
-
+  virtual bool Run( );
   virtual void WriteStats( ostream & os = cout ) const ;
   virtual void UpdateStats( ) ;
   virtual void DisplayStats( ostream & os = cout ) const ;

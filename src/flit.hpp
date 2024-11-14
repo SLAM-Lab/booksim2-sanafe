@@ -56,6 +56,7 @@ public:
   int  ctime;
   int  itime;
   int  atime;
+  int  processing_cycles;
 
   int  id;
   int  pid;
@@ -70,6 +71,8 @@ public:
   int  hops;
   bool watch;
   int  subnetwork;
+
+  bool credit_returned{false}; // TODO: jaboyle added by me!
   
   // intermediate destination (if any)
   mutable int intm;

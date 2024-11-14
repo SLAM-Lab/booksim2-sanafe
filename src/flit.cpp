@@ -71,7 +71,7 @@ void Flit::Reset()
   id        = -1 ;
   pid       = -1 ;
   hops      = 0 ;
-  watch     = false ;
+  watch     = true ;
   record    = false ;
   intm = 0;
   src = -1;
@@ -80,6 +80,8 @@ void Flit::Reset()
   intm =-1;
   ph = -1;
   data = 0;
+  credit_returned = false;
+  processing_cycles = -1;
 }  
 
 Flit * Flit::New() {
