@@ -73,10 +73,11 @@ bool TrafficManagerSpike::OpenTrace() {
     return true;
 }
 
-bool TrafficManagerSpike::_InjectionPossible(const int source, const int dest)
+bool TrafficManagerSpike::_InjectionPossible(const int source, const int dest,
+        const int subnet)
 {
     // Check if injection is possible by verifying buffer state
-    BufferState * const dest_buf = _buf_states[source][0]; // For subnet 0
+    BufferState * const dest_buf = _buf_states[source][subnet];
 
     // Create the packet's head flit to check routing
     Flit * f = Flit::New();
@@ -130,27 +131,30 @@ void TrafficManagerSpike::_Inject() {
     //    if no message was ready i.e. busy == false:
     //      get the next message to inject and update processing time
     //      busy = true
+    for (int n = 0; n < _nodes; ++n) {
+        if ( _tx_processing_cycles_left[n] > 0 ) {
+            --_tx_processing_cycles_left[n];
+            INFO("core %d tx cycles_left:%lld\n",
+                    n, _tx_processing_cycles_left[n]);
+        }
+    }
     for ( int subnet = 0; subnet < _subnets; ++subnet ) {
         for ( int n = 0; n < _nodes; ++n ) {
-            if ( _tx_processing_cycles_left[n] > 0 ) {
-                --_tx_processing_cycles_left[n];
-                INFO("core %d tx cycles_left:%lld\n",
-                      n, _tx_processing_cycles_left[n]);
-            } else if (!pending_events[n].empty()) {
+            if ( _tx_processing_cycles_left[n] <= 0  && !pending_events[n].empty()) {
                 if ( _pe_tx_busy[n] ) {
                     SpikeEvent next_event = pending_events[n].front();
                     int dest_core = next_event.dest_hw.first * CORES_PER_TILE +
                             next_event.dest_hw.second;
                     INFO("Ready to inject next spike packet at PE:%d\n", n);
                     // If core has processed neurons and generated a message
-                    if (_InjectionPossible(n, dest_core)) {
+                    if (_InjectionPossible(n, dest_core, subnet)) {
                         int processing_cycles = CyclesFromTime(
                             next_event.processing_latency);
                         // Network is ready so send the message
                         INFO("Injecting packet from core %d into net at t:%d\n",
                             n, _time);
                         int packet_id = _GeneratePacket(n, 1, 0, _time,
-                                dest_core, processing_cycles);
+                                dest_core, processing_cycles, subnet);
                         INFO("New flit fid:%d src:%d dest:%d\n", packet_id, n,
                                 dest_core);
                         _flit_processing_cycles[packet_id] = processing_cycles;
@@ -869,7 +873,7 @@ void TrafficManagerSpike::_RetireFlit(Flit* f, int dest) {
 }
 
 int TrafficManagerSpike::_GeneratePacket( int source, int stype,
-        int cl, int time, int dest, int processing_cycles)
+        int cl, int time, int dest, int processing_cycles, int subnet)
 {
     assert(stype!=0);
 
@@ -928,9 +932,11 @@ int TrafficManagerSpike::_GeneratePacket( int source, int stype,
         record = _measure_stats[cl];
     }
 
-    int subnetwork = ((packet_type == Flit::ANY_TYPE) ?
-                      RandomInt(_subnets-1) :
-                      _subnet[packet_type]);
+    //int subnetwork = ((packet_type == Flit::ANY_TYPE) ?
+    //                  RandomInt(_subnets-1) :
+    //                  _subnet[packet_type]);
+    // jboyle change
+    int subnetwork = subnet;
 
     if ( watch ) {
         *gWatchOut << GetSimTime() << " | "

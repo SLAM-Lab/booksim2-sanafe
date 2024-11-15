@@ -29,8 +29,7 @@
 // Topology
 
 topology = cmesh;
-//dim_x = 8;
-//dim_y = 4;
+subnets = 2;
 k = 4;
 n = 2;
 x = 8;
@@ -42,9 +41,10 @@ yr = 2;
 
 // Routing
 routing_function = dor;
+//routing_function = xy_yx;
 
 // Flow control
-num_vcs     = 4;
+num_vcs     = 1;
 vc_buf_size = 8;
 wait_for_tail_credit = 1;
 
@@ -55,6 +55,8 @@ alloc_iters  = 1;
 
 credit_delay   = 0;
 routing_delay  = 0;
+//credit_delay   = 1;
+//routing_delay  = 1;
 vc_alloc_delay = 1;
 sw_alloc_delay = 1;
 
@@ -68,5 +70,6 @@ packet_size = 1;
 
 // Simulation
 trace_file = /home/james/code/booksim2/src/messages.csv;
+// Do not randomly generate any input packets
 injection_rate = 0.0;
 clock_period = 1e-9;
