@@ -121,9 +121,7 @@ void TrafficManagerSpike::_Inject() {
     INFO("injecting messages:%d\n", _time);
 
     // Look at all cores and all pending packets, see if any are ready to send
-    //  If core is processing a message on the Tx side:
-    //    keep processing that message and do nothing (busy)
-    //  else:
+    //  another packet then run the following code
     //    if core has a message ready to go (i.e. processing time=0, but is busy)
     //      if the network is ready:
     //          send the message
@@ -138,9 +136,15 @@ void TrafficManagerSpike::_Inject() {
                     n, _tx_processing_cycles_left[n]);
         }
     }
+    // TODO: somehow predetermine which subnet packets should go to. That means
+    //  probably restructuring this code to iterate over nodes and send to
+    //  whatever subnet is designated. If no subnet is designated, we could in
+    //  future find the available subnet
     for ( int subnet = 0; subnet < _subnets; ++subnet ) {
         for ( int n = 0; n < _nodes; ++n ) {
             if ( _tx_processing_cycles_left[n] <= 0  && !pending_events[n].empty()) {
+                // Busy flag is set, which means the next message just finished
+                //  being generated and we can fetch the next spike message
                 if ( _pe_tx_busy[n] ) {
                     SpikeEvent next_event = pending_events[n].front();
                     int dest_core = next_event.dest_hw.first * CORES_PER_TILE +

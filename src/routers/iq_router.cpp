@@ -227,8 +227,7 @@ void IQRouter::ReadInputs( )
 
 void IQRouter::_InternalStep( )
 {
-  // TODO: HACK assume that only 4 cores per router
-  for (int i = 0; i < 4; ++i) {
+  for (int i = 0; i < gC; ++i) {
     if (_receiver_busy_cycles[i] > 0) {
       --_receiver_busy_cycles[i];
     }
@@ -1407,13 +1406,10 @@ void IQRouter::_SWAllocEvaluate( )
       INFO("flit fid:%d output:%d has %d processing cycles\n", f->pid, dest_output, f->processing_cycles);
       bool send_blocked = dest_buf->IsFullFor(dest_vc) || ( _output_buffer_size!=-1  && _output_buffer[dest_output].size()>=(size_t)(_output_buffer_size));
       // Only check receiver status if this is an ejection port (going to a core)
-      // TODO: hack, assumes 4 cores per router, how do we generalize?
-      if(dest_output < 4) {  // Assuming ejection ports are the first 4 ports
+      if(dest_output < gC) {  // Assuming ejection ports are the first "c" ports
           int core_id = dest_output;  // Convert output port to core ID
           send_blocked |= (_receiver_busy_cycles[core_id] > 0);
       }
-      // TODO: HACK: I think this is probably where I need to add my new code to
-      //  check if the receiving core is busy
       if(send_blocked) {
 
         INFO("Router:%d fid:%d VC:%d at output:%d is full/busy\n", GetID(), f->pid, dest_vc, dest_output);
