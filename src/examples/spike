@@ -73,4 +73,5 @@ packet_size = 1;
 trace_file = /home/james/code/booksim2/src/messages_single_ts.csv;
 // Do not randomly generate any input packets
 injection_rate = 0.0;
-clock_period = 1e-9;
+//clock_period = 1e-9;
+clock_period = 1.16e-9;
