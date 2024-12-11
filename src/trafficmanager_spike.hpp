@@ -69,6 +69,7 @@ protected:
     //std::map<int, long long> core_busy_until;
     std::vector<bool> _pe_rx_busy{};
     std::vector<bool> _pe_tx_busy{};
+    std::vector<long long int> _message_count{};
     std::vector<std::queue<int>> _received_flits{};
     std::map<int, long long int> _rx_processing_cycles_left;
     std::map<int, long long int> _tx_processing_cycles_left;
