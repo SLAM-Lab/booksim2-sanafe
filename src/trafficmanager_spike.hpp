@@ -10,7 +10,7 @@
 #define CORES_PER_TILE 4
 
 // Custom debug print routine with file and line number..
-#ifdef TRACE
+#if 1
 #define INFO(...) do { \
     fprintf(stdout, "[%s:%d:%s()] ", __FILE__, __LINE__, __func__); \
     fprintf(stdout, __VA_ARGS__); \
@@ -43,10 +43,10 @@ struct SpikeEvent {
 
     // Constructor for processing-only events
     static SpikeEvent CreateProcessingEvent(
-        int timestep,
-        std::pair<int, int> src_neuron,
-        std::pair<int, int> src_hw,
-        double processing_time) {
+            int timestep,
+            std::pair<int, int> src_neuron,
+            std::pair<int, int> src_hw,
+            double processing_time) {
         SpikeEvent event;
         event.event_type = Type::PROCESSING_ONLY;
         event.timestep = timestep;
@@ -90,6 +90,7 @@ public:
     void ReadNextTrace();
     int CyclesFromTime(double time_seconds);
     bool _Pending() override;
+    bool _NeuronProcessing();
     bool Run( ) override;
 
 

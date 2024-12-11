@@ -140,7 +140,7 @@ void TrafficManagerSpike::_Inject() {
     //  probably restructuring this code to iterate over nodes and send to
     //  whatever subnet is designated. If no subnet is designated, we could in
     //  future find the available subnet
-    for ( int subnet = 0; subnet < _subnets; ++subnet ) {
+    //for ( int subnet = 0; subnet < _subnets; ++subnet ) {
         for ( int n = 0; n < _nodes; ++n ) {
             if ( _tx_processing_cycles_left[n] <= 0  && !pending_events[n].empty()) {
                 // Busy flag is set, which means the next message just finished
@@ -150,25 +150,52 @@ void TrafficManagerSpike::_Inject() {
                     int dest_core = next_event.dest_hw.first * CORES_PER_TILE +
                             next_event.dest_hw.second;
                     INFO("Ready to inject next spike packet at PE:%d\n", n);
-                    // If core has processed neurons and generated a message
-                    if (_InjectionPossible(n, dest_core, subnet)) {
-                        int processing_cycles = CyclesFromTime(
-                            next_event.processing_latency);
-                        // Network is ready so send the message
-                        INFO("Injecting packet from core %d into net at t:%d\n",
-                            n, _time);
-                        int packet_id = _GeneratePacket(n, 1, 0, _time,
-                                dest_core, processing_cycles, subnet);
-                        INFO("New flit fid:%d src:%d dest:%d\n", packet_id, n,
-                                dest_core);
-                        _flit_processing_cycles[packet_id] = processing_cycles;
-                        INFO("Flit fid:%d will have %d processing cycles\n",
-                                packet_id, processing_cycles);
-                        // Remove the pending event for this core
-                        pending_events[n].pop();
-                        _pe_tx_busy[n] = false;
+
+                    constexpr bool dyn_subnet_alloc = false;
+                    int subnet;
+                    if (dyn_subnet_alloc) { // TODO: set in config file
+                        for (subnet = 0; subnet < _subnets; ++subnet) {
+                            if (_InjectionPossible(n, dest_core, subnet)) {
+                                int processing_cycles = CyclesFromTime(
+                                next_event.processing_latency);
+                                // Network is ready so send the message
+                                INFO("Injecting packet from core %d into net at t:%d\n",
+                                    n, _time);
+                                int packet_id = _GeneratePacket(n, 1, 0, _time,
+                                        dest_core, processing_cycles, subnet);
+                                INFO("New flit fid:%d src:%d dest:%d\n", packet_id, n,
+                                        dest_core);
+                                _flit_processing_cycles[packet_id] = processing_cycles;
+                                INFO("Flit fid:%d will have %d processing cycles\n",
+                                        packet_id, processing_cycles);
+                                // Remove the pending event for this core
+                                pending_events[n].pop();
+                                _pe_tx_busy[n] = false;
+                                break;
+                            }
+                        }
                     } else {
-                        INFO("Could not inject packet from core %d into net\n", n);
+                        subnet = (_cur_pid + 1) % _subnets;
+                        // If core has processed neurons and generated a message
+                        if (_InjectionPossible(n, dest_core, subnet)) {
+                            int processing_cycles = CyclesFromTime(
+                                next_event.processing_latency);
+                            // Network is ready so send the message
+                            INFO("Injecting packet from core %d into net at t:%d\n",
+                                n, _time);
+                            int packet_id = _GeneratePacket(n, 1, 0, _time,
+                                    dest_core, processing_cycles, subnet);
+                            INFO("New flit fid:%d src:%d dest:%d\n", packet_id, n,
+                                    dest_core);
+                            _flit_processing_cycles[packet_id] = processing_cycles;
+                            INFO("Flit fid:%d will have %d processing cycles\n",
+                                    packet_id, processing_cycles);
+                            // Remove the pending event for this core
+                            pending_events[n].pop();
+                            _pe_tx_busy[n] = false;
+                        } else {
+                            INFO("Could not inject packet from core %d into net\n", n);
+                        }
                     }
                 }
                 if (!_pe_tx_busy[n] && !pending_events[n].empty()) {
@@ -191,7 +218,7 @@ void TrafficManagerSpike::_Inject() {
                 }
             }
         }
-    }
+    //}
 }
 
 int TrafficManagerSpike::CyclesFromTime(double time_seconds) {
@@ -283,11 +310,21 @@ void TrafficManagerSpike::ReadNextTrace() {
     }
 }
 
+bool TrafficManagerSpike::_NeuronProcessing() {
+    // Check to see if any core is still processing its neurons
+    return std::any_of(_tx_processing_cycles_left.begin(),
+            _tx_processing_cycles_left.end(),
+            [](std::pair<const int, const long long int> src_core_cycles_pair){
+                return (src_core_cycles_pair.second != 0);
+            });
+}
+
 bool TrafficManagerSpike::_Pending() {
     // Use std::any_of to check if any PE's event queue is not empty
     return std::any_of(pending_events.begin(), pending_events.end(),
-        [](std::pair<const int, const std::queue<SpikeEvent>> src_core_pending_q_pair) {
-        return !src_core_pending_q_pair.second.empty();
+        [](std::pair<const int,
+            const std::queue<SpikeEvent>> src_core_pending_q_pair) {
+            return !src_core_pending_q_pair.second.empty();
     });
 }
 
@@ -327,10 +364,24 @@ void TrafficManagerSpike::_Step()
     for(int c = 0; c < _classes; ++c) {
         flits_in_flight |= !_total_in_flight_flits[c].empty();
     }
-    if(!flits_in_flight && !_Pending() && !_MessageProcessingFinished()) {
+    if(!flits_in_flight && !_Pending() &&
+            (_NeuronProcessing() ||  !_MessageProcessingFinished())) {
         // There are no more flits in flight, but we still need to wait for the
-        // remaining flits to be processed
-        INFO("Stepping, no in-flight flits but messages being processed\n");
+        //  remaining flits to be processed, or the cores to process their final
+        //  neurons
+        INFO("Stepping, no in-flight flits but neurons/messages being processed\n");
+
+        // Still update the neuron processing / Tx counters, in case there
+        //  is processing that occurs after the last message has been sent by
+        //  a core
+        for (int n = 0; n < _nodes; ++n) {
+            if ( _tx_processing_cycles_left[n] > 0 ) {
+                --_tx_processing_cycles_left[n];
+                INFO("core %d tx cycles_left:%lld\n",
+                        n, _tx_processing_cycles_left[n]);
+            }
+        }
+
         _time++;
         return;
     }
@@ -362,73 +413,62 @@ void TrafficManagerSpike::_Step()
 
     for ( int subnet = 0; subnet < _subnets; ++subnet ) {
         for ( int n = 0; n < _nodes; ++n ) {
-            //if (!_pe_rx_busy[n]) { // TODO: reenable with blocking, don't think this is the right way to do things
-            if (true) {
-                Flit * const f = _net[subnet]->ReadFlit( n );
-                if ( f != nullptr ) {
-                    INFO("Reading flit fid:%d for PE:%d at time:%d\n",
-                            f->pid, n, _time);
-                    _received_flits[n].push(f->pid);
-                    //assert(_received_flits[n].size() == 1); // TODO: reenable with blocking
-                    if (_received_flits[n].size() > 2) { // TODO: this is broken, but we will remove these variables anyway soon!
-                        INFO("Error: received flits:%zu\n",
-                                _received_flits[n].size());
-                        //exit(1);
-                    }
-                    _pe_rx_busy[n] = true;
-                    _rx_processing_cycles_left[n] =
-                            _flit_processing_cycles[f->pid];
-                    INFO("Marking PE:%d rx busy with flit:%d for %lld cycles\n",
-                            n, f->pid, _flit_processing_cycles[f->pid]);
-                    if(f->watch) {
-                        *gWatchOut << GetSimTime() << " | "
-                                << "node" << n << " | "
-                                << "Ejecting flit " << f->id
-                                << " (packet " << f->pid << ")"
-                                << " from VC " << f->vc
-                                << "." << endl;
-                    }
-
-                    flits[subnet].insert(make_pair(n, f));
-                    if((_sim_state == warming_up) || (_sim_state == running)) {
-                        ++_accepted_flits[f->cl][n];
-                        if(f->tail) {
-                            ++_accepted_packets[f->cl][n];
-                        }
-                    }
+            Flit * const f = _net[subnet]->ReadFlit( n );
+            if ( f != nullptr ) {
+                INFO("Reading flit fid:%d for PE:%d at time:%d\n",
+                        f->pid, n, _time);
+                _received_flits[n].push(f->pid);
+                _pe_rx_busy[n] = true;
+                _rx_processing_cycles_left[n] =
+                        _flit_processing_cycles[f->pid];
+                INFO("Marking PE:%d rx busy with flit:%d for %lld cycles\n",
+                        n, f->pid, _flit_processing_cycles[f->pid]);
+                if(f->watch) {
+                    *gWatchOut << GetSimTime() << " | "
+                            << "node" << n << " | "
+                            << "Ejecting flit " << f->id
+                            << " (packet " << f->pid << ")"
+                            << " from VC " << f->vc
+                            << "." << endl;
                 }
 
-                //INFO("Reading credit for PE:%d\n", n);
-                Credit * const c = _net[subnet]->ReadCredit( n );
-                if ( c ) {
-    #ifdef TRACK_FLOWS
-                    for(set<int>::const_iterator iter = c->vc.begin(); iter != c->vc.end(); ++iter) {
-                        int const vc = *iter;
-                        assert(!_outstanding_classes[n][subnet][vc].empty());
-                        int cl = _outstanding_classes[n][subnet][vc].front();
-                        _outstanding_classes[n][subnet][vc].pop();
-                        assert(_outstanding_credits[cl][subnet][n] > 0);
-                        --_outstanding_credits[cl][subnet][n];
+                flits[subnet].insert(make_pair(n, f));
+                if((_sim_state == warming_up) || (_sim_state == running)) {
+                    ++_accepted_flits[f->cl][n];
+                    if(f->tail) {
+                        ++_accepted_packets[f->cl][n];
                     }
-    #endif
-                    INFO("Buffer state before ProcessCredit - VC:%d available:%d\n",
-                            *c->vc.begin(), _buf_states[n][subnet]->IsAvailableFor(*(c->vc.begin())));
-                    INFO("occupancy before:%d\n", _buf_states[n][subnet]->Occupancy());
-                    _buf_states[n][subnet]->ProcessCredit(c);
-                    INFO("Buffer state after ProcessCredit - VC:%d available:%d\n",
-                            *c->vc.begin(), _buf_states[n][subnet]->IsAvailableFor(*(c->vc.begin())));
-                    INFO("occupancy after:%d\n", _buf_states[n][subnet]->Occupancy());
-                    c->Free();
                 }
-            } else {
-                INFO("PE:%d busy receiving flit:%d blocking for %lld cycles\n", n,
-                        _received_flits[n].front(), _rx_processing_cycles_left[n]);
+            }
+
+            //INFO("Reading credit for PE:%d\n", n);
+            Credit * const c = _net[subnet]->ReadCredit( n );
+            if ( c ) {
+#ifdef TRACK_FLOWS
+                for(set<int>::const_iterator iter = c->vc.begin(); iter != c->vc.end(); ++iter) {
+                    int const vc = *iter;
+                    assert(!_outstanding_classes[n][subnet][vc].empty());
+                    int cl = _outstanding_classes[n][subnet][vc].front();
+                    _outstanding_classes[n][subnet][vc].pop();
+                    assert(_outstanding_credits[cl][subnet][n] > 0);
+                    --_outstanding_credits[cl][subnet][n];
+                }
+#endif
+                INFO("Buffer state before ProcessCredit - VC:%d available:%d\n",
+                        *c->vc.begin(), _buf_states[n][subnet]->IsAvailableFor(*(c->vc.begin())));
+                INFO("occupancy before:%d\n", _buf_states[n][subnet]->Occupancy());
+                _buf_states[n][subnet]->ProcessCredit(c);
+                INFO("Buffer state after ProcessCredit - VC:%d available:%d\n",
+                        *c->vc.begin(), _buf_states[n][subnet]->IsAvailableFor(*(c->vc.begin())));
+                INFO("occupancy after:%d\n", _buf_states[n][subnet]->Occupancy());
+                c->Free();
             }
         }
         _net[subnet]->ReadInputs( );
     }
 
     if ( !_empty_network ) {
+        INFO("calling inject\n");
         _Inject();
     }
 
@@ -1103,9 +1143,9 @@ bool TrafficManagerSpike::Run( )
             _Step();
         }
 
-        // TODO: wait until all message processing has finished too
-        cout << "Waiting for messages to be processed\n";
-        while (_MessagesBeingReceived()) {
+        // Wait until all message and neuron processing  has finished too
+        cout << "Waiting for neurons/messages to be processed\n";
+        while (_MessagesBeingReceived() || _NeuronProcessing()) {
             _Step();
         }
         _empty_network = false;
