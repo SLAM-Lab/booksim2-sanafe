@@ -273,7 +273,7 @@ void TrafficManagerSpike::ReadNextTrace() {
             getline(ss, token, ','); event.processing_latency = stod(token);
             getline(ss, token, ','); event.blocking_latency = stod(token);
 
-            INFO("Adding spike event: generation_latency:%lf processing_latency:%lf\n",
+            INFO("Adding spike event: generation_latency:%e processing_latency:%e\n",
                     event.generation_latency, event.processing_latency);
             int src_core = event.src_hw.first * CORES_PER_TILE + event.src_hw.second;
             pending_events[src_core].push(event);

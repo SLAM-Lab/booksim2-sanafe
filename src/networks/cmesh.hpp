@@ -70,10 +70,10 @@ private:
   int _k ;
   int _n ;
   int _c ;
-  int _xcount;
-  int _ycount;
-  int _xrouter;
-  int _yrouter;
+  static int _xcount;
+  static int _ycount;
+  static int _xrouter;
+  static int _yrouter;
   bool _express_channels;
 };
 

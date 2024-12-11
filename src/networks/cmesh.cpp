@@ -52,6 +52,10 @@ int CMesh::_cY = 0 ;
 int CMesh::_memo_NodeShiftX = 0 ;
 int CMesh::_memo_NodeShiftY = 0 ;
 int CMesh::_memo_PortShiftY = 0 ;
+int CMesh::_xcount = 0;
+int CMesh::_ycount = 0;
+int CMesh::_xrouter = 0;
+int CMesh::_yrouter = 0;
 
 CMesh::CMesh( const Configuration& config, const string & name ) 
   : Network(config, name) 
@@ -68,6 +72,7 @@ void CMesh::RegisterRoutingFunctions() {
   gRoutingFunctionMap["xy_yx_no_express_cmesh"]  = &xy_yx_no_express_cmesh;
 }
 
+/*
 void CMesh::_ComputeSize( const Configuration &config ) {
 
   int k = config.GetInt( "k" );
@@ -80,21 +85,28 @@ void CMesh::_ComputeSize( const Configuration &config ) {
   //how many routers in the x or y direction
   _xcount = config.GetInt("x");
   _ycount = config.GetInt("y");
-  assert(_xcount == _ycount); // broken for asymmetric topologies
+  //assert(_xcount == _ycount); // broken for asymmetric topologies: TODO: HACK debugging this
   //configuration of hohw many clients in X and Y per router
   _xrouter = config.GetInt("xr");
   _yrouter = config.GetInt("yr");
-  assert(_xrouter == _yrouter); // broken for asymmetric concentration
+  //assert(_xrouter == _yrouter); // broken for asymmetric concentration
 
   gK = _k = k ;
   gN = _n = n ;
   gC = _c = c ;
+  gXRouter = _xrouter;
+  gYRouter = _yrouter;
 
-  assert(c == _xrouter*_yrouter);
-  
-  _nodes    = _c * powi( _k, _n); // Number of nodes in network
-  _size     = powi( _k, _n);      // Number of routers in network
-  _channels = 2 * _n * _size;     // Number of channels in network
+  //assert(c == _xrouter*_yrouter);
+
+  //_nodes    = _c * powi( _k, _n); // Number of nodes in network
+  // _size     = powi( _k, _n);      // Number of routers in network
+  //_size = _xrouter * _yrouter;
+  _size = _xcount * _ycount;
+  _nodes = _size * (_xrouter * _yrouter);
+  //_channels = 2 * _n * _size;     // Number of channels in network
+  _channels = 2 * (_xcount * (_ycount - 1) + _ycount * (_xcount - 1));
+
 
   _cX = _c / _n ;   // Concentration in X Dimension 
   _cY = _c / _cX ;  // Concentration in Y Dimension
@@ -105,13 +117,46 @@ void CMesh::_ComputeSize( const Configuration &config ) {
   _memo_PortShiftY = log_two(gK * _cX)  ;
 
 }
+*/
+
+void CMesh::_ComputeSize( const Configuration &config ) {
+  _xcount = config.GetInt("x");
+  _ycount = config.GetInt("y");
+  _xrouter = config.GetInt("xr");
+  _yrouter = config.GetInt("yr");
+  int k = config.GetInt( "k" );
+  int n = config.GetInt( "n" );
+  int c = config.GetInt( "c" );
+
+  assert(n <= 2); // broken for n > 2
+  assert(c == 4); // broken for c != 4
+  gK = _k = k ;
+  gN = _n = n ;
+  gC = _c = c ;
+  gXCount = _xcount;
+  gYCount = _ycount;
+
+  _cX = _c / _n ;   // Concentration in X Dimension
+  _cY = _c / _cX ;  // Concentration in Y Dimension
+
+  // Update size calculations
+  _size = _xcount * _ycount;  // Total number of routers
+  _nodes = _size * (_xrouter * _yrouter);  // Total nodes
+
+  _channels = 2 * _n * _size;     // Number of channels in network
+
+  // These need to be updated for proper channel addressing
+  _memo_NodeShiftX = _xrouter >> 1;
+  _memo_NodeShiftY = log_two(_xcount * _xrouter) + (_yrouter >> 1);
+  _memo_PortShiftY = log_two(_xcount * _xrouter);
+}
 
 void CMesh::_BuildNet( const Configuration& config ) {
 
   int x_index ;
   int y_index ;
 
-  //standard trace configuration 
+  //standard trace configuration
   if(gTrace){
     cout<<"Setup Finished Router"<<endl;
   }
@@ -119,20 +164,22 @@ void CMesh::_BuildNet( const Configuration& config ) {
   //latency type, noc or conventional network
   bool use_noc_latency;
   use_noc_latency = (config.GetInt("use_noc_latency")==1);
-  
+
   ostringstream name;
   // The following vector is used to check that every
   //  processor in the system is connected to the network
   vector<bool> channel_vector(_nodes, false) ;
-  
+
   //
   // Routers and Channel
   //
   for (int node = 0; node < _size; ++node) {
 
     // Router index derived from mesh index
-    y_index = node / _k ;
-    x_index = node % _k ;
+    // Calculate x,y coordinates correctly for rectangular mesh
+    y_index = node % _ycount;
+    x_index = node / _ycount;
+    const int offset = _size;
 
     const int degree_in  = 2 *_n + _c ;
     const int degree_out = 2 *_n + _c ;
@@ -160,76 +207,344 @@ void CMesh::_BuildNet( const Configuration& config ) {
     //
     for (int y = 0; y < _cY ; y++) {
       for (int x = 0; x < _cX ; x++) {
-	int link = (_k * _cX) * (_cY * y_index + y) + (_cX * x_index + x) ;
-	assert( link >= 0 ) ;
-	assert( link < _nodes ) ;
-	assert( channel_vector[ link ] == false ) ;
-	channel_vector[link] = true ;
-	// Ingress Ports
-	_routers[node]->AddInputChannel(_inject[link], _inject_cred[link]);
-	// Egress Ports
-	_routers[node]->AddOutputChannel(_eject[link], _eject_cred[link]);
-	//injeciton ejection latency is 1
-	_inject[link]->SetLatency( 1 );
-	_eject[link]->SetLatency( 1 );
+        //int link = (_k * _cX) * (_cY * y_index + y) + (_cX * x_index + x) ;
+        int base_node = (y_index + x_index * _ycount) * (_xrouter * _yrouter);
+        int node_id = base_node + (y * _xrouter + x);
+
+        assert( node_id >= 0 ) ;
+        assert( node_id < _nodes ) ;
+        assert( channel_vector[ node_id ] == false ) ;
+        channel_vector[node_id] = true ;
+        // Ingress Ports
+        _routers[node]->AddInputChannel(_inject[node_id], _inject_cred[node_id]);
+        // Egress Ports
+        _routers[node]->AddOutputChannel(_eject[node_id], _eject_cred[node_id]);
+        //injeciton ejection latency is 1
+        _inject[node_id]->SetLatency( 1 );
+        _eject[node_id]->SetLatency( 1 );
       }
     }
 
     //
     // router to router channels
     //
-    const int x = node % _k ;
-    const int y = node / _k ;
-    const int offset = powi( _k, _n ) ;
+    // Calculate channel numbers - maintain valid numbering even for unused channels
+    int px_out = _ycount * x_index + y_index + 0 * offset; // positive x direction channel out
+    int nx_out = _ycount * x_index + y_index + 1 * offset; // negative x direction channel out
+    int py_out = _ycount * x_index + y_index + 2 * offset; // positive y direction channel out
+    int ny_out = _ycount * x_index + y_index + 3 * offset; // negative y direction channel out
+
+    // Input channels - maintain consistent numbering
+    int px_in = _ycount * ((x_index+1) % _xcount) + y_index + 1 * offset;
+    int nx_in = _ycount * ((x_index+_xcount-1) % _xcount) + y_index + 0 * offset;
+    int py_in = _ycount * x_index + ((y_index+1) % _ycount) + 3 * offset;
+    int ny_in = _ycount * x_index + ((y_index+_ycount-1) % _ycount) + 2 * offset;
+
+    // Express Channels
+    if (x_index == 0){
+      // Router on left edge of mesh. Connect to -x output of
+      //  another router on the left edge of the mesh.
+      //nx_in = 0;
+      if (y_index < _ycount / 2 ) {
+	      nx_in = _ycount * x_index + (y_index + _ycount/2) + offset;
+      } else {
+	       nx_in = _ycount * x_index * (y_index - _ycount/2) + offset;
+      }
+    }
+
+    if (x_index == (_xcount - 1)) {
+      // Router on right edge of mesh. Connect to +x output of
+      //  another router on the right edge of the mesh.
+      px_in = 0;
+      if (y_index < _ycount / 2) {
+   	    px_in = _ycount * (y_index + _ycount/2) + x_index ;
+      } else {
+   	    px_in = _ycount * (y_index - _ycount/2) + x_index ;
+      }
+    }
+
+    if (y_index == 0) {
+      // Router on bottom edge of mesh. Connect to -y output of
+      //  another router on the bottom edge of the mesh.
+      //ny_in = 0;
+      if (x_index < _xcount / 2) {
+        ny_in = _ycount * x_index + y_index + ((_xcount/2) * _ycount) + 3 * offset;
+      } else {
+        ny_in = _ycount * x_index + y_index + ((-_xcount/2) * _ycount) + 3 * offset;
+      }
+    }
+
+    if (y_index == (_ycount - 1)) {
+      py_in = 0;
+      // Router on top edge of mesh. Connect to +y output of
+      //  another router on the top edge of the mesh
+      if (x_index < _xcount / 2) {
+	      py_in = _ycount * x_index + y_index + (_xcount/2 + _ycount) + 2 * offset;
+      } else {
+	      py_in = _ycount * x_index + y_index + (-_xcount/2 * _ycount) + 2 * offset;
+      }
+    }
+
+    /*set latency and add the channels*/
+
+    // Port 0: +x channel
+    if(use_noc_latency) {
+      int const px_latency = (x_index == _xcount-1) ? (_yrouter*_ycount/2) : _xrouter;
+      _chan[px_out]->SetLatency( px_latency );
+      _chan_cred[px_out]->SetLatency( px_latency );
+    } else {
+      _chan[px_out]->SetLatency( 1 );
+      _chan_cred[px_out]->SetLatency( 1 );
+    }
+    _routers[node]->AddOutputChannel( _chan[px_out], _chan_cred[px_out] );
+    _routers[node]->AddInputChannel( _chan[px_in], _chan_cred[px_in] );
+
+    if(gTrace) {
+      cout<<"Link "<<" "<<px_out<<" "<<px_in<<" "<<node<<" "<<_chan[px_out]->GetLatency()<<endl;
+    }
+
+    // Port 1: -x channel
+    if(use_noc_latency) {
+      int const nx_latency = (x_index == 0) ? (_yrouter * _ycount/2) : _xrouter;
+      _chan[nx_out]->SetLatency( nx_latency );
+      _chan_cred[nx_out]->SetLatency( nx_latency );
+    } else {
+      _chan[nx_out]->SetLatency( 1 );
+      _chan_cred[nx_out]->SetLatency( 1 );
+    }
+    _routers[node]->AddOutputChannel( _chan[nx_out], _chan_cred[nx_out] );
+    _routers[node]->AddInputChannel( _chan[nx_in], _chan_cred[nx_in] );
+
+    if(gTrace){
+      cout<<"Link "<<" "<<nx_out<<" "<<nx_in<<" "<<node<<" "<<_chan[nx_out]->GetLatency()<<endl;
+    }
+
+    // Port 2: +y channel
+    if(use_noc_latency) {
+      int const py_latency = (y_index == _ycount-1) ? (_xrouter * _xcount/2) : _yrouter;
+      _chan[py_out]->SetLatency( py_latency );
+      _chan_cred[py_out]->SetLatency( py_latency );
+    } else {
+      _chan[py_out]->SetLatency( 1 );
+      _chan_cred[py_out]->SetLatency( 1 );
+    }
+    _routers[node]->AddOutputChannel( _chan[py_out], _chan_cred[py_out] );
+    if (py_in >= 0) {
+      _routers[node]->AddInputChannel( _chan[py_in], _chan_cred[py_in] );
+    }
+
+    if(gTrace){
+      cout<<"Link "<<" "<<py_out<<" "<<py_in<<" "<<node<<" "<<_chan[py_out]->GetLatency()<<endl;
+    }
+
+    // Port 3: -y channel
+    if(use_noc_latency){
+      int const ny_latency = (y_index == 0) ? (_xrouter * _xcount/2) : _yrouter;
+      _chan[ny_out]->SetLatency( ny_latency );
+      _chan_cred[ny_out]->SetLatency( ny_latency );
+    } else {
+      _chan[ny_out]->SetLatency( 1 );
+      _chan_cred[ny_out]->SetLatency( 1 );
+    }
+    _routers[node]->AddOutputChannel( _chan[ny_out], _chan_cred[ny_out] );
+    if (ny_in >= 0) {
+      _routers[node]->AddInputChannel( _chan[ny_in], _chan_cred[ny_in] );
+    }
+
+    if(gTrace){
+      cout<<"Link "<<" "<<ny_out<<" "<<ny_in<<" "<<node<<" "<<_chan[ny_out]->GetLatency()<<endl;
+    }
+
+  }
+
+  // Check that all processors were connected to the network
+  for ( int i = 0 ; i < _nodes ; i++ ) {
+    assert( channel_vector[i] == true );
+  }
+
+  if(gTrace) {
+    cout<<"Setup Finished Link"<<endl;
+  }
+}
+
+/*
+
+void CMesh::_BuildNet( const Configuration& config ) {
+
+  int x_index ;
+  int y_index ;
+
+  //standard trace configuration 
+  if(gTrace){
+    cout<<"Setup Finished Router"<<endl;
+  }
+
+  //latency type, noc or conventional network
+  bool use_noc_latency;
+  use_noc_latency = (config.GetInt("use_noc_latency")==1);
+  
+  ostringstream name;
+  // The following vector is used to check that every
+  //  processor in the system is connected to the network
+  vector<bool> channel_vector(_nodes, false) ;
+  
+  //
+  // Routers and Channel
+  //
+  for (int node = 0; node < _size; ++node) {
+
+    // Router index derived from mesh index
+    //y_index = node / _k ;
+    //x_index = node % _k ;
+
+    // Calculate x,y coordinates correctly for rectangular mesh
+    y_index = node % _ycount;
+    x_index = node / _ycount;
+    // Fix router-to-router channel calculations
+    const int offset = _size;
+
+    // Update channel numbers for rectangular topology
+    int px_out = _ycount * x_index + y_index + 0 * offset;
+    int nx_out = _ycount * x_index + y_index + 1 * offset;
+    int py_out = _ycount * x_index + y_index + 2 * offset;
+    int ny_out = _ycount * x_index + y_index + 3 * offset;
+
+    // Calculate input channels with bounds checking
+    int px_in = (x_index < _xcount-1) ? _ycount * (x_index+1) + y_index + 1 * offset : -1;
+    int nx_in = (x_index > 0) ? _ycount * (x_index-1) + y_index + 0 * offset : -1;
+    int py_in = (y_index < _ycount-1) ? _ycount * x_index + (y_index+1) + 3 * offset : -1;
+    int ny_in = (y_index > 0) ? _ycount * x_index + (y_index-1) + 2 * offset : -1;
+
+    // Express channels need special handling for rectangular mesh
+    if (x_index == 0) {
+      nx_in = -1;  // No express channels on the edge
+    }
+    if (x_index == (_xcount - 1)) {
+      px_in = -1;
+    }
+
+    const int degree_in  = 2 *_n + _c ;
+    const int degree_out = 2 *_n + _c ;
+
+    name << "router_" << y_index << '_' << x_index;
+    _routers[node] = Router::NewRouter( config, 
+					this, 
+					name.str(), 
+					node,
+					degree_in,
+					degree_out);
+    _timed_modules.push_back(_routers[node]);
+    name.str("");
+
+    //
+    // Port Numbering: as best as I can determine, the order in
+    //  which the input and output channels are added to the
+    //  router determines the associated port number that must be
+    //  used by the router. Output port number increases with 
+    //  each new channel
+    //
+
+    //
+    // Processing node channels
+    //
+    for (int y = 0; y < _cY ; y++) {
+      for (int x = 0; x < _cX ; x++) {
+        int link = (_k * _cX) * (_cY * y_index + y) + (_cX * x_index + x) ;
+        assert( link >= 0 ) ;
+        assert( link < _nodes ) ;
+        assert( channel_vector[ link ] == false ) ;
+        channel_vector[link] = true ;
+        // Ingress Ports
+        _routers[node]->AddInputChannel(_inject[link], _inject_cred[link]);
+        // Egress Ports
+        _routers[node]->AddOutputChannel(_eject[link], _eject_cred[link]);
+        //injeciton ejection latency is 1
+        _inject[link]->SetLatency( 1 );
+        _eject[link]->SetLatency( 1 );
+      }
+    }
+
+
+    //
+    // router to router channels
+    //
+    //const int x = node % _k ;
+    //const int y = node / _k ;
+    //const int offset = powi( _k, _n ) ;
+
+    const int y = node % _yrouter;
+    const int x = node / _yrouter;
 
     //the channel number of the input output channels.
-    int px_out = _k * y + x + 0 * offset ;
-    int nx_out = _k * y + x + 1 * offset ;
-    int py_out = _k * y + x + 2 * offset ;
-    int ny_out = _k * y + x + 3 * offset ;
-    int px_in  = _k * y + ((x+1)) + 1 * offset ;
-    int nx_in  = _k * y + ((x-1)) + 0 * offset ;
-    int py_in  = _k * ((y+1)) + x + 3 * offset ;
-    int ny_in  = _k * ((y-1)) + x + 2 * offset ;
+    // int px_out = _k * y + x + 0 * offset ;
+    // int nx_out = _k * y + x + 1 * offset ;
+    // int py_out = _k * y + x + 2 * offset ;
+    // int ny_out = _k * y + x + 3 * offset ;
+    // int px_in  = _k * y + ((x+1)) + 1 * offset ;
+    // int nx_in  = _k * y + ((x-1)) + 0 * offset ;
+    // int py_in  = _k * ((y+1)) + x + 3 * offset ;
+    // int ny_in  = _k * ((y-1)) + x + 2 * offset ;
+
+    // Handle edge cases for asymmetric topology
+    if (x == (_xcount - 1)) {
+        // Router on right edge - handle express channels
+        if (y < _ycount / 2) {
+            px_in = _ycount * (y + _ycount/2) + x;
+        } else {
+            px_in = _ycount * (y - _ycount/2) + x;
+        }
+    }
 
     // Express Channels
     if (x == 0){
       // Router on left edge of mesh. Connect to -x output of
       //  another router on the left edge of the mesh.
-      if (y < _k / 2 )
-	nx_in = _k * (y + _k/2) + x + offset ;
-      else
-	nx_in = _k * (y - _k/2) + x + offset ;
+      nx_in = 0;
+      //
+      // if (y < _k / 2 ) {
+	    //   nx_in = _k * (y + _k/2) + x + offset;
+      // } else {
+	    //   nx_in = _k * (y - _k/2) + x + offset;
+      // }
+      //
     }
-    
-    if (x == (_k-1)){
-      // Router on right edge of mesh. Connect to +x output of 
+
+    //if (x == (_k-1)){
+    if (x == (_xrouter - 1)) {
+      // Router on right edge of mesh. Connect to +x output of
       //  another router on the right edge of the mesh.
-      if (y < _k / 2)
-   	px_in = _k * (y + _k/2) + x ;
-      else
-   	px_in = _k * (y - _k/2) + x ;
+      //px_in = 0;
+      if (y < _k / 2) {
+   	    px_in = _k * (y + _k/2) + x ;
+      } else {
+   	    px_in = _k * (y - _k/2) + x ;
+      }
     }
-    
+
     if (y == 0) {
       // Router on bottom edge of mesh. Connect to -y output of
       //  another router on the bottom edge of the mesh.
-      if (x < _k / 2) 
-	ny_in = _k * y + (x + _k/2) + 3 * offset ;
-      else
-	ny_in = _k * y + (x - _k/2) + 3 * offset ;
-    }
-    
-    if (y == (_k-1)) {
-      // Router on top edge of mesh. Connect to +y output of
-      //  another router on the top edge of the mesh
-      if (x < _k / 2)
-	py_in = _k * y + (x + _k/2) + 2 * offset ;
-      else
-	py_in = _k * y + (x - _k/2) + 2 * offset ;
+      //ny_in = 0;
+      if (x < _k / 2) {
+	      ny_in = _k * y + (x + _k/2) + 3 * offset ;
+      } else {
+	      ny_in = _k * y + (x - _k/2) + 3 * offset ;
+      }
     }
 
-    /*set latency and add the channels*/
+    //if (y == (_k-1)) {
+    if (y == (_yrouter - 1)) {
+      py_in = 0;
+      // Router on top edge of mesh. Connect to +y output of
+      //  another router on the top edge of the mesh
+      if (x < _k / 2) {
+	      py_in = _k * y + (x + _k/2) + 2 * offset ;
+      } else {
+	      py_in = _k * y + (x - _k/2) + 2 * offset ;
+      }
+    }
+
+    //set latency and add the channels
 
     // Port 0: +x channel
     if(use_noc_latency) {
@@ -242,7 +557,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
     }
     _routers[node]->AddOutputChannel( _chan[px_out], _chan_cred[px_out] );
     _routers[node]->AddInputChannel( _chan[px_in], _chan_cred[px_in] );
-    
+
     if(gTrace) {
       cout<<"Link "<<" "<<px_out<<" "<<px_in<<" "<<node<<" "<<_chan[px_out]->GetLatency()<<endl;
     }
@@ -273,8 +588,10 @@ void CMesh::_BuildNet( const Configuration& config ) {
       _chan_cred[py_out]->SetLatency( 1 );
     }
     _routers[node]->AddOutputChannel( _chan[py_out], _chan_cred[py_out] );
-    _routers[node]->AddInputChannel( _chan[py_in], _chan_cred[py_in] );
-    
+    if (py_in >= 0) {
+      _routers[node]->AddInputChannel( _chan[py_in], _chan_cred[py_in] );
+    }
+
     if(gTrace){
       cout<<"Link "<<" "<<py_out<<" "<<py_in<<" "<<node<<" "<<_chan[py_out]->GetLatency()<<endl;
     }
@@ -289,22 +606,26 @@ void CMesh::_BuildNet( const Configuration& config ) {
       _chan_cred[ny_out]->SetLatency( 1 );
     }
     _routers[node]->AddOutputChannel( _chan[ny_out], _chan_cred[ny_out] );
-    _routers[node]->AddInputChannel( _chan[ny_in], _chan_cred[ny_in] );    
+    if (ny_in >= 0) {
+      _routers[node]->AddInputChannel( _chan[ny_in], _chan_cred[ny_in] );
+    }
 
     if(gTrace){
       cout<<"Link "<<" "<<ny_out<<" "<<ny_in<<" "<<node<<" "<<_chan[ny_out]->GetLatency()<<endl;
     }
-    
-  }    
+
+  }
 
   // Check that all processors were connected to the network
-  for ( int i = 0 ; i < _nodes ; i++ ) 
-    assert( channel_vector[i] == true ) ;
-  
-  if(gTrace){
+  for ( int i = 0 ; i < _nodes ; i++ ) {
+    assert( channel_vector[i] == true );
+  }
+
+  if(gTrace) {
     cout<<"Setup Finished Link"<<endl;
   }
 }
+*/
 
 
 // ----------------------------------------------------------------------
@@ -315,22 +636,35 @@ void CMesh::_BuildNet( const Configuration& config ) {
 
 int CMesh::NodeToRouter( int address ) {
 
-  int y  = (address /  (_cX*gK))/_cY ;
-  int x  = (address %  (_cX*gK))/_cY ;
-  int router = y*gK + x ;
-  
-  return router ;
+  //int y  = (address /  (_cX*gK))/_cY ;
+  //int x  = (address %  (_cX*gK))/_cY ;
+  //int router = y*gK + x ;
+
+   // Calculate which router this node belongs to
+  int nodes_per_router = _xrouter * _yrouter;
+  int router_num = address / nodes_per_router;
+
+  return router_num;
 }
 
 int CMesh::NodeToPort( int address ) {
-  
-  const int maskX  = _cX - 1 ;
-  const int maskY  = _cY - 1 ;
 
-  int x = address & maskX ;
-  int y = (int)(address/(2*gK)) & maskY ;
+  int local_addr = address % gC;
 
-  return (gC / 2) * y + x;
+  // Calculate local x,y coordinates within router
+  int local_x = local_addr % _xrouter;
+  int local_y = local_addr / _xrouter;
+
+  assert(local_x < _xrouter && local_y < _yrouter);
+  return (_xrouter * local_y) + local_x;
+
+  //const int maskX  = _cX - 1 ;
+  //const int maskY  = _cY - 1 ;
+
+  //int x = address & maskX ;
+  //int y = (int)(address/(2*gK)) & maskY ;
+
+  //return (gC / 2) * y + x;
 }
 
 // ----------------------------------------------------------------------
@@ -668,6 +1002,65 @@ int cmesh_next( int cur, int dest ) {
   const int NEGATIVE_X = 1 ;
   const int POSITIVE_Y = 2 ;
   const int NEGATIVE_Y = 3 ;
+
+  int cur_y  = cur % gYCount;
+  int cur_x  = cur / gYCount;
+  int dest_y = dest % gYCount ;
+  int dest_x = dest / gYCount ;
+
+  // Dimension-order Routing: x , y
+  if (cur_x < dest_x) {
+    // Express?
+    if ((dest_x - cur_x) > gXCount/2-1){
+      if (cur_y == 0)
+	return gC + NEGATIVE_Y ;
+      if (cur_y == (gYCount-1))
+	return gC + POSITIVE_Y ;
+    }
+    return gC + POSITIVE_X ;
+  }
+  if (cur_x > dest_x) {
+    // Express ? 
+    if ((cur_x - dest_x) > gXCount/2-1){
+      if (cur_y == 0)
+	return gC + NEGATIVE_Y ;
+      if (cur_y == (gYCount-1)) 
+	return gC + POSITIVE_Y ;
+    }
+    return gC + NEGATIVE_X ;
+  }
+  if (cur_y < dest_y) {
+    // Express?
+    if ((dest_y - cur_y) > gYCount/2-1) {
+      if (cur_x == 0)
+	return gC + NEGATIVE_X ;
+      if (cur_x == (gXCount-1))
+	return gC + POSITIVE_X ;
+    }
+    return gC + POSITIVE_Y ;
+  }
+  if (cur_y > dest_y) {
+    // Express ?
+    if ((cur_y - dest_y) > gYCount/2-1){
+      if (cur_x == 0)
+	return gC + NEGATIVE_X ;
+      if (cur_x == (gXCount-1))
+	return gC + POSITIVE_X ;
+    }
+    return gC + NEGATIVE_Y ;
+  }
+
+  assert(false);
+  return -1;
+}
+
+/*
+int cmesh_next( int cur, int dest ) {
+
+  const int POSITIVE_X = 0 ;
+  const int NEGATIVE_X = 1 ;
+  const int POSITIVE_Y = 2 ;
+  const int NEGATIVE_Y = 3 ;
   
   int cur_y  = cur / gK ;
   int cur_x  = cur % gK ;
@@ -719,6 +1112,8 @@ int cmesh_next( int cur, int dest ) {
   assert(false);
   return -1;
 }
+*/
+
 
 void dor_cmesh( const Router *r, const Flit *f, int in_channel, 
 		OutputSet *outputs, bool inject )
@@ -780,6 +1175,37 @@ int cmesh_next_no_express( int cur, int dest ) {
   const int NEGATIVE_X = 1 ;
   const int POSITIVE_Y = 2 ;
   const int NEGATIVE_Y = 3 ;
+
+  //magic constant 2, which is supose to be _cX and _cY
+  int cur_y  = cur % gYCount;
+  int cur_x  = cur / gYCount;
+  int dest_y = dest % gYCount;
+  int dest_x = dest / gYCount;
+
+  // Dimension-order Routing: x , y
+  if (cur_x < dest_x) {
+    return gC + POSITIVE_X ;
+  }
+  if (cur_x > dest_x) {
+    return gC + NEGATIVE_X ;
+  }
+  if (cur_y < dest_y) {
+    return gC + POSITIVE_Y ;
+  }
+  if (cur_y > dest_y) {
+    return gC + NEGATIVE_Y ;
+  }
+  assert(false);
+  return -1;
+}
+
+/*
+int cmesh_next_no_express( int cur, int dest ) {
+
+  const int POSITIVE_X = 0 ;
+  const int NEGATIVE_X = 1 ;
+  const int POSITIVE_Y = 2 ;
+  const int NEGATIVE_Y = 3 ;
   
   //magic constant 2, which is supose to be _cX and _cY
   int cur_y  = cur/gK ;
@@ -803,6 +1229,7 @@ int cmesh_next_no_express( int cur, int dest ) {
   assert(false);
   return -1;
 }
+*/
 
 void dor_no_express_cmesh( const Router *r, const Flit *f, int in_channel, 
 			   OutputSet *outputs, bool inject )

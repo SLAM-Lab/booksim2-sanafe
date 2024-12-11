@@ -309,7 +309,9 @@ void IQRouter::WriteOutputs( )
 bool IQRouter::_ReceiveFlits( )
 {
   bool activity = false;
-  for(int input = 0; input < _inputs; ++input) { 
+  //INFO("inputs: %zu\n", _input_channels.size());
+  for(int input = 0; input < _inputs; ++input) {
+  //for(size_t input = 0; input < _input_channels.size(); ++input) {
     Flit * const f = _input_channels[input]->Receive();
     if(f) {
 
@@ -335,6 +337,7 @@ bool IQRouter::_ReceiveCredits( )
 {
   bool activity = false;
   for(int output = 0; output < _outputs; ++output) {  
+  //for(size_t output = 0; output < _output_credits.size(); ++output) {  
     Credit * const c = _output_credits[output]->Receive();
     if(c) {
       _proc_credits.push_back(make_pair(GetSimTime() + _credit_delay, 

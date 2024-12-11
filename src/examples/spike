@@ -30,17 +30,18 @@
 
 topology = cmesh;
 subnets = 2;
-k = 4;
+k = 8; // TODO: overriding this
 n = 2;
 x = 8;
-// TODO: booksim2 doesn't seem to support asymmetrical grids right now... is this a problem or can I ignore it..
-y = 8;
+y = 4;
 c = 4;
 xr = 2;
 yr = 2;
 
+
 // Routing
-routing_function = dor;
+routing_function = dor_no_express;
+use_noc_latency = 0;
 //routing_function = xy_yx;
 
 // Flow control
@@ -69,7 +70,7 @@ internal_speedup  = 1.0;
 packet_size = 1;
 
 // Simulation
-trace_file = /home/james/code/booksim2/src/messages.csv;
+trace_file = /home/james/code/booksim2/src/messages_short.csv;
 // Do not randomly generate any input packets
 injection_rate = 0.0;
 clock_period = 1e-9;
