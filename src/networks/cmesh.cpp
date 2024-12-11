@@ -244,44 +244,40 @@ void CMesh::_BuildNet( const Configuration& config ) {
     if (x_index == 0){
       // Router on left edge of mesh. Connect to -x output of
       //  another router on the left edge of the mesh.
-      //nx_in = 0;
-      if (y_index < _ycount / 2 ) {
-	      nx_in = _ycount * x_index + (y_index + _ycount/2) + offset;
+      if (y_index < _ycount / 2) {
+          nx_in = _ycount * x_index + (y_index + _ycount/2) + offset;
       } else {
-	       nx_in = _ycount * x_index * (y_index - _ycount/2) + offset;
+          nx_in = _ycount * x_index + (y_index - _ycount/2) + offset;
       }
     }
 
     if (x_index == (_xcount - 1)) {
       // Router on right edge of mesh. Connect to +x output of
       //  another router on the right edge of the mesh.
-      px_in = 0;
       if (y_index < _ycount / 2) {
-   	    px_in = _ycount * (y_index + _ycount/2) + x_index ;
+          px_in = _ycount * x_index + (y_index + _ycount/2);
       } else {
-   	    px_in = _ycount * (y_index - _ycount/2) + x_index ;
+          px_in = _ycount * x_index + (y_index - _ycount/2);
       }
     }
 
     if (y_index == 0) {
       // Router on bottom edge of mesh. Connect to -y output of
       //  another router on the bottom edge of the mesh.
-      //ny_in = 0;
       if (x_index < _xcount / 2) {
-        ny_in = _ycount * x_index + y_index + ((_xcount/2) * _ycount) + 3 * offset;
+          ny_in = _ycount * x_index + y_index + ((_xcount/2) * _ycount) + 3 * offset;
       } else {
-        ny_in = _ycount * x_index + y_index + ((-_xcount/2) * _ycount) + 3 * offset;
+          ny_in = _ycount * x_index + y_index + ((-_xcount/2) * _ycount) + 3 * offset;
       }
     }
 
     if (y_index == (_ycount - 1)) {
-      py_in = 0;
       // Router on top edge of mesh. Connect to +y output of
       //  another router on the top edge of the mesh
       if (x_index < _xcount / 2) {
-	      py_in = _ycount * x_index + y_index + (_xcount/2 + _ycount) + 2 * offset;
+          py_in = _ycount * x_index + y_index + ((_xcount/2) * _ycount) + 2 * offset;
       } else {
-	      py_in = _ycount * x_index + y_index + (-_xcount/2 * _ycount) + 2 * offset;
+          py_in = _ycount * x_index + y_index + ((-_xcount/2) * _ycount) + 2 * offset;
       }
     }
 

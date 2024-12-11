@@ -10,10 +10,14 @@
 #define CORES_PER_TILE 4
 
 // Custom debug print routine with file and line number..
+#ifdef TRACE
 #define INFO(...) do { \
     fprintf(stdout, "[%s:%d:%s()] ", __FILE__, __LINE__, __func__); \
     fprintf(stdout, __VA_ARGS__); \
 } while (0)
+#else
+#define INFO(...) do {} while (0)
+#endif
 
 struct SpikeEvent {
     enum class Type {

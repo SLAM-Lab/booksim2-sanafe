@@ -300,11 +300,15 @@ void IQRouter::WriteOutputs( )
 //------------------------------------------------------------------------------
 // read inputs
 //------------------------------------------------------------------------------
-
+#ifdef TRACE
 #define INFO(...) do { \
     fprintf(stdout, "[%s:%d:%s()] ", __FILE__, __LINE__, __func__); \
     fprintf(stdout, __VA_ARGS__); \
 } while (0)
+#else
+#define INFO(...) do {} while (0)
+#endif
+
 
 bool IQRouter::_ReceiveFlits( )
 {
@@ -352,11 +356,6 @@ bool IQRouter::_ReceiveCredits( )
 //------------------------------------------------------------------------------
 // input queuing
 //------------------------------------------------------------------------------
-
-#define INFO(...) do { \
-    fprintf(stdout, "[%s:%d:%s()] ", __FILE__, __LINE__, __func__); \
-    fprintf(stdout, __VA_ARGS__); \
-} while (0)
 
 void IQRouter::_InputQueuing( )
 {
