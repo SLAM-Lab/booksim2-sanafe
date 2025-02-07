@@ -30,11 +30,14 @@
 
 topology = cmesh;
 subnets = 2;
-k = 8; // TODO: overriding this
+k = 8; // TODO: overriding this, in future remove this too
 n = 2;
 x = 8;
 y = 4;
 c = 4;
+// xr and yr don't make a ton of sense as variables: there isn't really a need
+//  to define these in addition to c
+// TODO: remove xr and yr from simulations and calculations
 xr = 2;
 yr = 2;
 

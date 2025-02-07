@@ -104,7 +104,6 @@ protected:
 
 private:
     bool OpenTrace();
-    bool _MessageProcessingFinished();
     bool _InjectionPossible(const int source, const int dest, const int subnet);
     int _GeneratePacket(int source, int stype, int c1, int time, int dest, int processing_cycles, int subnet);
 };

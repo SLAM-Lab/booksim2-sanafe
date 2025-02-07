@@ -136,6 +136,8 @@ BufferState::SharedBufferPolicy::SharedBufferPolicy(Configuration const & config
 
   _buf_size = config.GetInt("buf_size");
   if(_buf_size < 0) {
+    // TODO?: not sure but here do I set a different buffer size depending on the direction or if
+    //  it is a node to router link
     _buf_size = vcs * config.GetInt("vc_buf_size");
   }
 

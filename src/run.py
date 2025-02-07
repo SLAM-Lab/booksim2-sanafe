@@ -8,7 +8,8 @@ with open("messages.csv", "r") as messages_file:
 
 print(df)
 cycle_times = []
-for timestep in range(1, 129):
+timesteps = 128
+for timestep in range(1, timesteps+1):
     filtered_df = df[df.iloc[:, 0] == timestep]
     with open(f"messages_single_ts.csv", "w") as output_file:
         filtered_df.to_csv(output_file, index=False)
@@ -23,5 +24,6 @@ for timestep in range(1, 129):
             print(f"Timestep {timestep}: {cycles} cycles")
             break
 
-assert(len(cycle_times) == 128)
-print(cycle_times)
+assert(len(cycle_times) == timesteps)
+for time in cycle_times:
+    print(f"{time * 1.16e-9:e}")

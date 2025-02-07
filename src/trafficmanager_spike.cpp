@@ -31,7 +31,7 @@ TrafficManagerSpike::TrafficManagerSpike(const Configuration& config, const vect
         exit(-1);
     }
 
-    _pe_rx_busy = std::vector<bool>(_nodes, false);
+    //_pe_rx_busy = std::vector<bool>(_nodes, false);
     _pe_tx_busy = std::vector<bool>(_nodes, false);
     _received_flits = std::vector<std::queue<int>>(_nodes);
     _message_count = std::vector<long long int>(_nodes, 0ULL);
@@ -329,11 +329,6 @@ bool TrafficManagerSpike::_Pending() {
     });
 }
 
-bool TrafficManagerSpike::_MessageProcessingFinished()
-{
-    return !_rx_processing_cycles_left.empty();
-}
-
 bool TrafficManagerSpike::_SingleSim() {
     _Step();
 
@@ -366,7 +361,7 @@ void TrafficManagerSpike::_Step()
         flits_in_flight |= !_total_in_flight_flits[c].empty();
     }
     if(!flits_in_flight && !_Pending() &&
-            (_NeuronProcessing() ||  !_MessageProcessingFinished())) {
+            (_NeuronProcessing() ||  !_MessagesBeingReceived())) {
         // There are no more flits in flight, but we still need to wait for the
         //  remaining flits to be processed, or the cores to process their final
         //  neurons
@@ -394,6 +389,7 @@ void TrafficManagerSpike::_Step()
     */
 
     // Update rx processing
+    /*
     for (int subnet = 0; subnet < _subnets; ++subnet) {
         for (int n = 0; n < _nodes; ++n) {
             if (_rx_processing_cycles_left[n] > 0) {
@@ -409,6 +405,7 @@ void TrafficManagerSpike::_Step()
             }
         }
     }
+    */
 
     vector<map<int, Flit *> > flits(_subnets);
 
@@ -419,11 +416,13 @@ void TrafficManagerSpike::_Step()
                 INFO("Reading flit fid:%d for PE:%d at time:%d\n",
                         f->pid, n, _time);
                 _received_flits[n].push(f->pid);
-                _pe_rx_busy[n] = true;
-                _rx_processing_cycles_left[n] =
-                        _flit_processing_cycles[f->pid];
-                INFO("Marking PE:%d rx busy with flit:%d for %lld cycles\n",
-                        n, f->pid, _flit_processing_cycles[f->pid]);
+                // TODO: I changed the mechanism I used - this code and variables
+                //  are now redundant
+                //_pe_rx_busy[n] = true;
+                //_rx_processing_cycles_left[n] =
+                //        _flit_processing_cycles[f->pid];
+                //INFO("Marking PE:%d rx busy with fid:%d for %lld cycles\n",
+                //        n, f->pid, _flit_processing_cycles[f->pid]);
                 if(f->watch) {
                     *gWatchOut << GetSimTime() << " | "
                             << "node" << n << " | "
@@ -568,7 +567,7 @@ void TrafficManagerSpike::_Step()
                         _rf(router, cf, in_channel, &cf->la_route_set, false);
                         cf->vc = -1;
 
-                        INFO("PE:%d generating lookahead routing info fo flit fid:%d\n", n, cf->pid);
+                        INFO("PE:%d generating lookahead routing info for flit fid:%d\n", n, cf->pid);
                         if(cf->watch) {
                             //*gWatchOut << GetSimTime() << " | "
                             //           << "node" << n << " | "
@@ -1172,8 +1171,8 @@ bool TrafficManagerSpike::Run( )
 
 void TrafficManagerSpike::_ClearStats() {
     TrafficManager::_ClearStats();
-    _pe_rx_busy = std::vector<bool>(_nodes, false);
-    _rx_processing_cycles_left.clear();
+    //_pe_rx_busy = std::vector<bool>(_nodes, false);
+    //_rx_processing_cycles_left.clear();
     _tx_processing_cycles_left.clear();
     _message_count = std::vector<long long int>(_nodes, 0ULL);
     pending_events.clear();

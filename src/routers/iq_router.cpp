@@ -25,6 +25,15 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#if 1
+#define INFO(...) do { \
+    fprintf(stdout, "[%s:%d:%s()] ", __FILE__, __LINE__, __func__); \
+    fprintf(stdout, __VA_ARGS__); \
+} while (0)
+#else
+#define INFO(...) do {} while (0)
+#endif
+
 #include "iq_router.hpp"
 
 #include <string>
@@ -56,6 +65,7 @@ IQRouter::IQRouter( Configuration const & config, Module *parent,
   _vc_busy_when_full = (config.GetInt("vc_busy_when_full") > 0);
   _vc_prioritize_empty = (config.GetInt("vc_prioritize_empty") > 0);
   _vc_shuffle_requests = (config.GetInt("vc_shuffle_requests") > 0);
+  _vc_buf_size = config.GetInt("vc_buf_size"); // jboyle: Added
 
   _speculative = (config.GetInt("speculative") > 0);
   _spec_check_elig = (config.GetInt("spec_check_elig") > 0);
@@ -171,7 +181,8 @@ IQRouter::IQRouter( Configuration const & config, Module *parent,
   _bufferMonitor = new BufferMonitor(inputs, _classes);
   _switchMonitor = new SwitchMonitor(inputs, outputs, _classes);
 
-  _receiver_busy_cycles.resize(4, false); // TODO: HACK manually resize
+  _receiver_busy_cycles.resize(gC, 0);
+  _receiver_buffers.resize(gC, deque<pair<int, int>>());
 
 #ifdef TRACK_FLOWS
   for(int c = 0; c < _classes; ++c) {
@@ -230,6 +241,18 @@ void IQRouter::_InternalStep( )
   for (int i = 0; i < gC; ++i) {
     if (_receiver_busy_cycles[i] > 0) {
       --_receiver_busy_cycles[i];
+    }
+    if ((_receiver_busy_cycles[i] == 0) && !_receiver_buffers[i].empty()) {
+      auto id_cycles_pair = _receiver_buffers[i].front();
+      int flit_id = id_cycles_pair.first;
+      int flit_processing_cycles = id_cycles_pair.second;
+      _receiver_busy_cycles[i] = flit_processing_cycles;
+      _receiver_buffers[i].pop_front();
+      INFO("fid:%d core:%d Rx finished get flit and set %d processing cycles "
+          "(new buffer size:%zu)\n",
+          flit_id, i, flit_processing_cycles, _receiver_buffers[i].size());
+      assert(flit_id >= 0);
+      assert(flit_processing_cycles >= 0);
     }
   }
 
@@ -300,14 +323,6 @@ void IQRouter::WriteOutputs( )
 //------------------------------------------------------------------------------
 // read inputs
 //------------------------------------------------------------------------------
-#ifdef TRACE
-#define INFO(...) do { \
-    fprintf(stdout, "[%s:%d:%s()] ", __FILE__, __LINE__, __func__); \
-    fprintf(stdout, __VA_ARGS__); \
-} while (0)
-#else
-#define INFO(...) do {} while (0)
-#endif
 
 
 bool IQRouter::_ReceiveFlits( )
@@ -1410,7 +1425,8 @@ void IQRouter::_SWAllocEvaluate( )
       // Only check receiver status if this is an ejection port (going to a core)
       if(dest_output < gC) {  // Assuming ejection ports are the first "c" ports
           int core_id = dest_output;  // Convert output port to core ID
-          send_blocked |= (_receiver_busy_cycles[core_id] > 0);
+          //send_blocked |= (_receiver_busy_cycles[core_id] > 0);
+          send_blocked |= (_receiver_buffers[core_id].size() >= (size_t) _vc_buf_size);
       }
       if(send_blocked) {
 
@@ -2242,11 +2258,17 @@ void IQRouter::_SwitchUpdate( )
     }
     INFO("flit fid:%d at router:%d finished crossbar traversal\n",
         f->pid, GetID());
-    if (output < 4) {
+    if (output < gC) {
       int core_id = output;
-      _receiver_busy_cycles[core_id] = f->processing_cycles;
-      INFO("fid:%d setting core:%d rx busy for %d cycles\n",
-          f->pid, core_id, _receiver_busy_cycles[core_id]);
+      if (_receiver_busy_cycles[core_id] > 0) {
+        _receiver_buffers[core_id].push_back({f->id, f->processing_cycles});
+        INFO("fid:%d core:%d busy receiving, pushing into buffer (size:%zu)\n",
+          f->id, core_id, _receiver_buffers[core_id].size());
+      } else {
+        _receiver_busy_cycles[core_id] = f->processing_cycles;
+        INFO("fid:%d core:%d setting rx busy for %d cycles\n",
+            f->pid, core_id, _receiver_busy_cycles[core_id]);
+      }
     }
 
     _switchMonitor->traversal(input, output, f) ;
