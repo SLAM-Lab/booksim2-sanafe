@@ -94,6 +94,9 @@ bool gTrace;
 ostream * gWatchOut;
 
 
+vector<int> gReceiverBusyCycles{};
+vector<deque<pair<int, int>>> gReceiverBuffers{};
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -110,7 +113,11 @@ bool Simulate( BookSimConfig const & config )
     ostringstream name;
     name << "network_" << i;
     net[i] = Network::New( config, name.str() );
+
   }
+
+  gReceiverBusyCycles.resize(gNodes, 0);
+  gReceiverBuffers.resize(gNodes, deque<pair<int, int>>());
 
   /*tcc and characterize are legacy
    *not sure how to use them 

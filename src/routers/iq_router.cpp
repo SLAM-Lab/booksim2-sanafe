@@ -25,7 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#if 1
+#if 0
 #define INFO(...) do { \
     fprintf(stdout, "[%s:%d:%s()] ", __FILE__, __LINE__, __func__); \
     fprintf(stdout, __VA_ARGS__); \
@@ -181,9 +181,6 @@ IQRouter::IQRouter( Configuration const & config, Module *parent,
   _bufferMonitor = new BufferMonitor(inputs, _classes);
   _switchMonitor = new SwitchMonitor(inputs, outputs, _classes);
 
-  _receiver_busy_cycles.resize(gC, 0);
-  _receiver_buffers.resize(gC, deque<pair<int, int>>());
-
 #ifdef TRACK_FLOWS
   for(int c = 0; c < _classes; ++c) {
     _stored_flits[c].resize(_inputs, 0);
@@ -238,24 +235,6 @@ void IQRouter::ReadInputs( )
 
 void IQRouter::_InternalStep( )
 {
-  for (int i = 0; i < gC; ++i) {
-    if (_receiver_busy_cycles[i] > 0) {
-      --_receiver_busy_cycles[i];
-    }
-    if ((_receiver_busy_cycles[i] == 0) && !_receiver_buffers[i].empty()) {
-      auto id_cycles_pair = _receiver_buffers[i].front();
-      int flit_id = id_cycles_pair.first;
-      int flit_processing_cycles = id_cycles_pair.second;
-      _receiver_busy_cycles[i] = flit_processing_cycles;
-      _receiver_buffers[i].pop_front();
-      INFO("fid:%d core:%d Rx finished get flit and set %d processing cycles "
-          "(new buffer size:%zu)\n",
-          flit_id, i, flit_processing_cycles, _receiver_buffers[i].size());
-      assert(flit_id >= 0);
-      assert(flit_processing_cycles >= 0);
-    }
-  }
-
   if(!_active) {
     return;
   }
@@ -1364,8 +1343,8 @@ bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
 
 bool IQRouter::_rxBusy( ) const
 {
-  for (size_t i = 0; i < _receiver_busy_cycles.size(); ++i) {
-    if (_receiver_busy_cycles[i] > 0) {
+  for (size_t i = 0; i < gReceiverBusyCycles.size(); ++i) {
+    if (gReceiverBusyCycles[i] > 0) {
       return true;
     }
   }
@@ -1424,9 +1403,11 @@ void IQRouter::_SWAllocEvaluate( )
       bool send_blocked = dest_buf->IsFullFor(dest_vc) || ( _output_buffer_size!=-1  && _output_buffer[dest_output].size()>=(size_t)(_output_buffer_size));
       // Only check receiver status if this is an ejection port (going to a core)
       if(dest_output < gC) {  // Assuming ejection ports are the first "c" ports
-          int core_id = dest_output;  // Convert output port to core ID
-          //send_blocked |= (_receiver_busy_cycles[core_id] > 0);
-          send_blocked |= (_receiver_buffers[core_id].size() >= (size_t) _vc_buf_size);
+        // TODO: calculate the nodes this router position is associated with
+        int core_id = (_id*gC) + dest_output;  // Convert output port to core ID
+        INFO("id:%d gC:%d dest_output:%d core_id:%d\n", _id, gC, dest_output, core_id);
+          //send_blocked |= (gReceiverBusyCycles[core_id] > 0);
+          send_blocked |= (gReceiverBuffers[core_id].size() >= (size_t) _vc_buf_size);
       }
       if(send_blocked) {
 
@@ -2259,15 +2240,15 @@ void IQRouter::_SwitchUpdate( )
     INFO("flit fid:%d at router:%d finished crossbar traversal\n",
         f->pid, GetID());
     if (output < gC) {
-      int core_id = output;
-      if (_receiver_busy_cycles[core_id] > 0) {
-        _receiver_buffers[core_id].push_back({f->id, f->processing_cycles});
+      int core_id = (_id*gC) + output;
+      if (gReceiverBusyCycles[core_id] > 0) {
+        gReceiverBuffers[core_id].push_back({f->id, f->processing_cycles});
         INFO("fid:%d core:%d busy receiving, pushing into buffer (size:%zu)\n",
-          f->id, core_id, _receiver_buffers[core_id].size());
+          f->id, core_id, gReceiverBuffers[core_id].size());
       } else {
-        _receiver_busy_cycles[core_id] = f->processing_cycles;
+        gReceiverBusyCycles[core_id] = f->processing_cycles;
         INFO("fid:%d core:%d setting rx busy for %d cycles\n",
-            f->pid, core_id, _receiver_busy_cycles[core_id]);
+            f->pid, core_id, gReceiverBusyCycles[core_id]);
       }
     }
 

@@ -30,6 +30,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <deque>
+#include <utility>
 
 /*all declared in main.cpp*/
 
@@ -51,5 +53,9 @@ extern int gNodes;
 extern bool gTrace;
 
 extern std::ostream * gWatchOut;
+
+// jboyle: Added to track receiving cores
+extern std::vector<int> gReceiverBusyCycles;
+extern std::vector<std::deque<std::pair<int, int>>> gReceiverBuffers;
 
 #endif

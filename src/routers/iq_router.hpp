@@ -107,9 +107,6 @@ class IQRouter : public Router {
   vector<vector<int> > _noq_next_vc_start;
   vector<vector<int> > _noq_next_vc_end;
 
-  // jboyle: Added to track received flits at nodes
-  vector<int> _receiver_busy_cycles;
-  vector<deque<pair<int, int>>> _receiver_buffers;
   int _vc_buf_size;
 #ifdef TRACK_FLOWS
   vector<vector<queue<int> > > _outstanding_classes;

@@ -792,6 +792,24 @@ void TrafficManagerSpike::_Step()
         _net[subnet]->WriteOutputs( );
     }
 
+    for (int i = 0; i < _nodes; ++i) {
+        if (gReceiverBusyCycles[i] > 0) {
+          --gReceiverBusyCycles[i];
+        }
+        if ((gReceiverBusyCycles[i] == 0) && !gReceiverBuffers[i].empty()) {
+          auto id_cycles_pair = gReceiverBuffers[i].front();
+          int flit_id = id_cycles_pair.first;
+          int flit_processing_cycles = id_cycles_pair.second;
+          gReceiverBusyCycles[i] = flit_processing_cycles;
+          gReceiverBuffers[i].pop_front();
+          INFO("fid:%d core:%d Rx finished get flit and set %d processing cycles "
+              "(new buffer size:%zu)\n",
+              flit_id, i, flit_processing_cycles, gReceiverBuffers[i].size());
+          assert(flit_id >= 0);
+          assert(flit_processing_cycles >= 0);
+        }
+      }
+
     ++_time;
     assert(_time);
     if(gTrace){
