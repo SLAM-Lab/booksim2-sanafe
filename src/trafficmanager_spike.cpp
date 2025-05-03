@@ -234,7 +234,8 @@ void TrafficManagerSpike::ReadNextTrace() {
 
         // Parse CSV format
         int timestep;
-        std::pair<int, int> src_neuron, src_hw;
+	std::pair<std::string, int> src_neuron;
+        std::pair<int, int> src_hw;
         std::string dest_hw_str;
         double generation_latency;
 
@@ -245,7 +246,7 @@ void TrafficManagerSpike::ReadNextTrace() {
         getline(ss, token, ',');
         size_t dot_pos = token.find('.');
         src_neuron = std::make_pair(
-            stoi(token.substr(0, dot_pos)),
+            token.substr(0, dot_pos),
             stoi(token.substr(dot_pos + 1))
         );
 
@@ -337,8 +338,7 @@ bool TrafficManagerSpike::_SingleSim() {
         ReadNextTrace();
     }
 
-    constexpr int max_time = 100000; // TODO: figure better way to limit time
-    while ( _Pending() && (_time < max_time) )
+    while ( _Pending())
     {
         _Step();
     }
@@ -360,7 +360,7 @@ void TrafficManagerSpike::_Step()
     for(int c = 0; c < _classes; ++c) {
         flits_in_flight |= !_total_in_flight_flits[c].empty();
     }
-    if(!flits_in_flight && !_Pending() &&
+    if(!flits_in_flight && (Credit::OutStanding() == 0) && !_Pending() &&
             (_NeuronProcessing() ||  !_MessagesBeingReceived())) {
         // There are no more flits in flight, but we still need to wait for the
         //  remaining flits to be processed, or the cores to process their final
@@ -1156,17 +1156,19 @@ bool TrafficManagerSpike::Run( )
                 packets_left |= !_total_in_flight_flits[c].empty();
             }
         }
-        //wait until all the credits are drained as well
-        while(Credit::OutStanding()!=0){
-            _Step();
-        }
 
         // Wait until all message and neuron processing  has finished too
-        cout << "Waiting for neurons/messages to be processed\n";
+        INFO("Waiting for neurons/messages to be processed\n");
         while (_MessagesBeingReceived() || _NeuronProcessing()) {
             _Step();
         }
         _empty_network = false;
+
+        //wait until all the credits are drained as well
+        INFO("Waiting for credits to be drained\n");
+        while(Credit::OutStanding()!=0){
+            _Step();
+        }
 
         //for the love of god don't ever say "Time taken" anywhere else
         //the power script depend on it

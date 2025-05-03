@@ -27,7 +27,7 @@ struct SpikeEvent {
 
     Type event_type;
     int timestep;
-    std::pair<int, int> src_neuron;
+    std::pair<std::string, int> src_neuron;
     std::pair<int, int> src_hw;
     std::pair<int, int> dest_hw;
     int hops;
@@ -44,7 +44,7 @@ struct SpikeEvent {
     // Constructor for processing-only events
     static SpikeEvent CreateProcessingEvent(
             int timestep,
-            std::pair<int, int> src_neuron,
+            std::pair<std::string, int> src_neuron,
             std::pair<int, int> src_hw,
             double processing_time) {
         SpikeEvent event;
