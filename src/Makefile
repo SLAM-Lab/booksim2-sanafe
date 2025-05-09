@@ -32,12 +32,15 @@ CPPFLAGS += -Wall $(INCPATH) $(DEFINE)
 CPPFLAGS += -O3
 #CPPFLAGS += -O0
 CPPFLAGS += -g
-LFLAGS +=
+CPPFLAGS += -fPIC  # Add position-independent code flag for shared library
+LFLAGS += -shared  # Add shared library flag
 
-PROG := booksim
+# Library name
+LIB_NAME := libbooksim.so
+LIB_STATIC := libbooksim.a
 
-# simulator source files
-CPP_SRCS = $(wildcard *.cpp) $(wildcard */*.cpp)
+# simulator source files - exclude main.cpp
+CPP_SRCS = $(filter-out main.cpp, $(wildcard *.cpp)) $(wildcard */*.cpp)
 CPP_HDRS = $(wildcard *.hpp) $(wildcard */*.hpp)
 CPP_DEPS = $(CPP_SRCS:.cpp=.d)
 CPP_OBJS = $(CPP_SRCS:.cpp=.o)
@@ -51,12 +54,19 @@ YACC_OBJS = y.tab.o
 
 OBJS :=  $(CPP_OBJS) $(LEX_OBJS) $(YACC_OBJS)
 
-.PHONY: clean
+.PHONY: clean all static shared
 
-all: $(PROG)
+all: shared static
 
-$(PROG): $(OBJS)
-	 $(CXX) $(LFLAGS) $^ -o $@
+shared: $(LIB_NAME)
+
+static: $(LIB_STATIC)
+
+$(LIB_NAME): $(OBJS)
+	$(CXX) $(LFLAGS) $^ -o $@
+
+$(LIB_STATIC): $(OBJS)
+	$(AR) rcs $@ $^
 
 $(LEX_SRCS): config.l
 	$(LEX) $<
@@ -78,7 +88,7 @@ clean:
 	rm -f $(LEX_SRCS)
 	rm -f $(CPP_DEPS)
 	rm -f $(OBJS)
-	rm -f $(PROG)
+	rm -f $(LIB_NAME) $(LIB_STATIC)
 
 distclean: clean
 	rm -f *~ */*~
