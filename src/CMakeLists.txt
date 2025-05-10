@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
-project(booksim2 LANGUAGES CXX)
+project(booksim
+    DESCRIPTION "Cycle accurate NoC simulator"
+    HOMEPAGE_URL "https://github.com/SLAM-Lab/booksim2-sanafe"
+    LANGUAGES CXX
+)
 
 # Set up build flags
 set(CMAKE_CXX_STANDARD 17)
