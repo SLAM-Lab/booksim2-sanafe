@@ -815,7 +815,6 @@ void TrafficManagerSpike::_Step()
     if(gTrace){
         cout<<"TIME "<<_time<<endl;
     }
-
 }
 
 void TrafficManagerSpike::_RetireFlit(Flit* f, int dest) {

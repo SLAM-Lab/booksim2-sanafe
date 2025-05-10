@@ -5,6 +5,7 @@
 #include "random_utils.hpp"
 #include "network.hpp"
 #include "power_module.hpp"
+#include "globals.hpp"
 
 #include <sys/time.h>
 #include <iostream>
@@ -15,6 +16,9 @@
 // Global variables to maintain BookSim2 state
 static TrafficManager *trafficManager = nullptr;
 static bool initialized = false;
+int GetSimTime() {
+  return trafficManager->getTime();
+}
 
 bool gPrintActivity;
 
@@ -23,9 +27,15 @@ int gN;//dimension
 int gC;//concentration
 int gYCount;
 int gXCount;
-
 int gNodes;
 
+//generate nocviewer trace
+bool gTrace;
+
+ostream * gWatchOut;
+
+vector<int> gReceiverBusyCycles{};
+vector<deque<pair<int, int>>> gReceiverBuffers{};
 //extern "C" {
 
 BookSimConfig booksim_init(int argc, char **argv) {
