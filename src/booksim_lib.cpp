@@ -124,14 +124,17 @@ bool booksim_run( BookSimConfig const & config )
       Power_Module pnet(net[i], config);
       pnet.run();
     }
-
-    delete net[i];
   }
 
+  return result;
+}
+
+void booksim_close()
+{
   delete trafficManager;
   trafficManager = NULL;
 
-  return result;
+  return;
 }
 
 //} // extern "C"
