@@ -65,7 +65,7 @@ install(TARGETS booksim booksim_shared
     LIBRARY DESTINATION lib
 )
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/
-    DESTINATION include/booksim2
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+    DESTINATION include/
     FILES_MATCHING PATTERN "*.hpp"
 )
