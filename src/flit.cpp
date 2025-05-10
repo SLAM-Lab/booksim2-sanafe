@@ -106,4 +106,7 @@ void Flit::FreeAll() {
     delete _all.top();
     _all.pop();
   }
+  while(!_free.empty()) {
+    _free.pop();
+  }
 }
