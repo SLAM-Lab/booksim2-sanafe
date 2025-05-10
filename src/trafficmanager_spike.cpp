@@ -798,7 +798,7 @@ void TrafficManagerSpike::_Step()
         }
         if ((gReceiverBusyCycles[i] == 0) && !gReceiverBuffers[i].empty()) {
           auto id_cycles_pair = gReceiverBuffers[i].front();
-          int flit_id = id_cycles_pair.first;
+          [[maybe_unused]] int flit_id = id_cycles_pair.first;
           int flit_processing_cycles = id_cycles_pair.second;
           gReceiverBusyCycles[i] = flit_processing_cycles;
           gReceiverBuffers[i].pop_front();

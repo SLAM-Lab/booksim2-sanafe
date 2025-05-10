@@ -225,7 +225,8 @@ Router*& Tree4::_Router( int height, int pos )
   
 int Tree4::_WireLatency( int height1, int pos1, int height2, int pos2 )
 {
-  int heightChild, heightParent, posChild, posParent;
+  int heightChild, posChild, posParent;
+  [[maybe_unused]] int heightParent;
 
   int L = -1;
 

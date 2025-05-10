@@ -495,7 +495,7 @@ HotSpotTrafficPattern::HotSpotTrafficPattern(int nodes, vector<int> hotspots,
   size_t const size = _hotspots.size();
   _rates.resize(size, _rates.empty() ? 1 : _rates.back());
   for(size_t i = 0; i < size; ++i) {
-    int const hotspot = _hotspots[i];
+    [[maybe_unused]] int const hotspot = _hotspots[i];
     assert((hotspot >= 0) && (hotspot < _nodes));
     int const rate = _rates[i];
     assert(rate > 0);
