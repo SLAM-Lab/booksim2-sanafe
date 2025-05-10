@@ -28,16 +28,16 @@ int gNodes;
 
 //extern "C" {
 
-void booksim_init(int argc, char **argv) {
-    BookSimConfig config;
+BookSimConfig booksim_init(int argc, char **argv) {
+    BookSimConfig config{};
   if (initialized) {
     std::cerr << "BookSim2 is already initialized!" << std::endl;
-    return;
+    return config;
   }
 
   if ( !ParseArgs( &config, argc, argv ) ) {
     cerr << "Usage: " << argv[0] << " configfile... [param=value...]" << endl;
-    return;
+    return config;
   }
 
   /*initialize routing, traffic, injection functions
@@ -61,6 +61,7 @@ void booksim_init(int argc, char **argv) {
 
   /*configure and run the simulator
    */
+  return config;
 }
 
 bool booksim_run( BookSimConfig const & config )
