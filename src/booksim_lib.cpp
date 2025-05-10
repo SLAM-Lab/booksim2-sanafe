@@ -13,8 +13,6 @@
 #include <sstream>
 
 // Global variables to maintain BookSim2 state
-static Configuration *config = nullptr;
-static Network *net = nullptr;
 static TrafficManager *trafficManager = nullptr;
 static bool initialized = false;
 
@@ -85,7 +83,7 @@ bool booksim_run( BookSimConfig const & config )
   gReceiverBuffers.resize(gNodes, deque<pair<int, int>>());
 
   /*tcc and characterize are legacy
-   *not sure how to use them 
+   *not sure how to use them
    */
 
   assert(trafficManager == NULL);

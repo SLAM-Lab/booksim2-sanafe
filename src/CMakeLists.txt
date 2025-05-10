@@ -9,6 +9,9 @@ project(booksim
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+add_compile_options(
+    -Wall -pedantic -Werror
+)
 
 # Find lex and yacc
 find_program(LEX_EXECUTABLE NAMES flex)
