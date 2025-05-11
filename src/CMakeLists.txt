@@ -16,20 +16,21 @@ add_compile_options(
     -Wall -pedantic -Werror
 )
 
-# Generate lexer and parser files
-set(LEX_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)
-set(YACC_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/y.tab.c)
-set(YACC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/y.tab.h)
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
 
-execute_process(
-    COMMAND ${LEX_EXECUTABLE} -o ${LEX_OUTPUT} ${CMAKE_CURRENT_SOURCE_DIR}/config.l
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+set(PARSER_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+# Generate parser files with BISON
+BISON_TARGET(ConfigParser
+             ${CMAKE_CURRENT_SOURCE_DIR}/config.y
+             ${PARSER_OUTPUT_DIR}/config.tab.c
+             DEFINES_FILE ${PARSER_OUTPUT_DIR}/config.tab.h)
 
-execute_process(
-    COMMAND ${YACC_EXECUTABLE} -d -o ${YACC_OUTPUT} ${CMAKE_CURRENT_SOURCE_DIR}/config.y
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+# Generate lexer files with FLEX
+FLEX_TARGET(ConfigScanner
+            ${CMAKE_CURRENT_SOURCE_DIR}/config.l
+            ${PARSER_OUTPUT_DIR}/config.lex.c)
+ADD_FLEX_BISON_DEPENDENCY(ConfigScanner ConfigParser)
 
 # Define source directories and include paths
 set(BOOKSIM_INCLUDE_DIRS
@@ -67,8 +68,8 @@ cmake_print_variables(LEX_OUTPUT)
 # Create object library with common code
 add_library(booksim_common OBJECT
     ${COMMON_SOURCES}
-    ${YACC_OUTPUT}
-    ${LEX_OUTPUT}
+    ${BISON_ConfigParser_OUTPUTS}
+    ${FLEX_ConfigScanner_OUTPUTS}
 )
 target_include_directories(booksim_common PUBLIC ${BOOKSIM_INCLUDE_DIRS})
 set_target_properties(booksim_common PROPERTIES
