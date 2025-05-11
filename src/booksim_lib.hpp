@@ -35,7 +35,7 @@ void booksim_init();
 BookSimConfig booksim_load_config(int argc, char **argv);
 void booksim_create_spike_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, std::pair<int, int> dest_hw, double generation_latency, double processing_latency );
 void booksim_create_processing_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, double generation_latency );
-double booksim_run(BookSimConfig const & config, std::vector<SpikeEvent> spike_events = {});
+double booksim_run(BookSimConfig const & config);
 void booksim_close();
 
 #endif // _BOOKSIM_LIB_H_
