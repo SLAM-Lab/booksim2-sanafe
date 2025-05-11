@@ -28,6 +28,7 @@
 #include "booksim_lib.hpp"
 #include "booksim.hpp"
 #include "config_utils.hpp"
+#include "spike.hpp"
 #include "trafficmanager_spike.hpp"
 #include "random_utils.hpp"
 #include "network.hpp"

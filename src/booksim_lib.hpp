@@ -29,8 +29,7 @@
 #define _BOOKSIM_LIB_H_
 
 #include "booksim_config.hpp"
-
-struct SpikeEvent;
+#include "spike.hpp"
 
 void booksim_init();
 BookSimConfig booksim_load_config(int argc, char **argv);
