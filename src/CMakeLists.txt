@@ -19,17 +19,21 @@ add_compile_options(
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
+set(LEX_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)
+set(YACC_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/y.tab.c)
+set(YACC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/y.tab.h)
+
 set(PARSER_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 # Generate parser files with BISON
 BISON_TARGET(ConfigParser
              ${CMAKE_CURRENT_SOURCE_DIR}/config.y
-             ${PARSER_OUTPUT_DIR}/config.tab.c
-             DEFINES_FILE ${PARSER_OUTPUT_DIR}/config.tab.h)
+             ${YACC_OUTPUT}
+             DEFINES_FILE ${YACC_HEADER})
 
 # Generate lexer files with FLEX
 FLEX_TARGET(ConfigScanner
             ${CMAKE_CURRENT_SOURCE_DIR}/config.l
-            ${PARSER_OUTPUT_DIR}/config.lex.c)
+            ${LEX_OUTPUT})
 ADD_FLEX_BISON_DEPENDENCY(ConfigScanner ConfigParser)
 
 # Define source directories and include paths

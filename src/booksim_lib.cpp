@@ -165,7 +165,7 @@ double booksim_run( BookSimConfig const & config, std::vector<SpikeEvent> spike_
   return run_time;
 }
 
-void booksim_create_spike_event(int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, double generation_latency )
+void booksim_create_processing_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, double generation_latency )
 {
   SpikeEvent event = SpikeEvent::CreateProcessingEvent(timestep, src_neuron, src_hw, generation_latency);
   trafficManager->PushTraceEvent(event);
@@ -173,12 +173,13 @@ void booksim_create_spike_event(int timestep, std::pair<std::string, int> src_ne
   return;
 }
 
-void booksim_create_processing_event(int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, double generation_latency, double processing_latency )
+void booksim_create_spike_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, std::pair<int, int> dest_hw, double generation_latency, double processing_latency )
 {
   SpikeEvent event;
   event.event_type = SpikeEvent::Type::SPIKE_PACKET;
   event.src_neuron = src_neuron;
   event.src_hw = src_hw;
+  event.dest_hw = dest_hw;
   event.generation_latency = generation_latency;
   event.processing_latency = processing_latency;
 
