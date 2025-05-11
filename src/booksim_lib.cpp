@@ -101,7 +101,7 @@ BookSimConfig booksim_load_config(int argc, char **argv)
   return config;
 }
 
-bool booksim_run( BookSimConfig const & config, std::vector<SpikeEvent> spike_events)
+double booksim_run( BookSimConfig const & config, std::vector<SpikeEvent> spike_events)
 {
   vector<Network *> net;
 
@@ -139,7 +139,7 @@ bool booksim_run( BookSimConfig const & config, std::vector<SpikeEvent> spike_ev
   total_time = 0.0;
   gettimeofday(&start_time, NULL);
 
-  bool result = trafficManager->Run() ;
+  trafficManager->Run() ;
 
 
   gettimeofday(&end_time, NULL);
@@ -158,7 +158,11 @@ bool booksim_run( BookSimConfig const & config, std::vector<SpikeEvent> spike_ev
     delete net[i];
   }
 
-  return result;
+  int cycle_count = trafficManager->getTime();
+  double clock_period = config.GetFloat("clock_period");
+  double run_time = cycle_count * clock_period;
+
+  return run_time;
 }
 
 void booksim_create_spike_event(int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, double generation_latency )
