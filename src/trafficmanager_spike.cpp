@@ -53,7 +53,7 @@ TrafficManagerSpike::TrafficManagerSpike(const Configuration& config, const vect
     trace_file = config.GetStr("trace_file");
     clock_period = config.GetFloat("clock_period");
 
-    if (!OpenTrace()) {
+    if (!trace_file.empty() && !OpenTrace()) {
         cerr << "Error: Could not open trace file " << trace_file << endl;
         exit(-1);
     }
