@@ -63,18 +63,32 @@ ostream * gWatchOut;
 
 vector<int> gReceiverBusyCycles{};
 vector<deque<pair<int, int>>> gReceiverBuffers{};
-//extern "C" {
 
-BookSimConfig booksim_init(int argc, char **argv) {
-    BookSimConfig config{};
+void booksim_init() {
   if (initialized) {
     std::cerr << "BookSim2 is already initialized!" << std::endl;
-    return config;
   }
+  initialized = true;
 
+  return;
+}
+
+BookSimConfig booksim_load_config(int argc, char **argv)
+{
+  BookSimConfig config{};
   if ( !ParseArgs( &config, argc, argv ) ) {
     cerr << "Usage: " << argv[0] << " configfile... [param=value...]" << endl;
     return config;
+  }
+
+  string watch_out_file = config.GetStr( "watch_out" );
+  gWatchOut = &cout;
+  if(watch_out_file == "") {
+    gWatchOut = NULL;
+  } else if(watch_out_file == "-") {
+    gWatchOut = &cout;
+  } else {
+    gWatchOut = new ofstream(watch_out_file.c_str());
   }
 
   /*initialize routing, traffic, injection functions
@@ -84,24 +98,10 @@ BookSimConfig booksim_init(int argc, char **argv) {
   gPrintActivity = (config.GetInt("print_activity") > 0);
   gTrace = (config.GetInt("viewer_trace") > 0);
 
-  string watch_out_file = config.GetStr( "watch_out" );
-  gWatchOut = &cout;
-  /*
-  if(watch_out_file == "") {
-    gWatchOut = NULL;
-  } else if(watch_out_file == "-") {
-    gWatchOut = &cout;
-  } else {
-    gWatchOut = new ofstream(watch_out_file.c_str());
-  }
-  */
-
-  /*configure and run the simulator
-   */
   return config;
 }
 
-bool booksim_run( BookSimConfig const & config )
+bool booksim_run( BookSimConfig const & config, std::vector<SpikeEvent> spike_events)
 {
   vector<Network *> net;
 
@@ -127,6 +127,10 @@ bool booksim_run( BookSimConfig const & config )
   assert(trafficManager == NULL);
   trafficManager = TrafficManagerSpike::New( config, net ) ;
 
+  for (auto &event : spike_events)
+  {
+    trafficManager->PushTraceEvent(event);
+  }
   /*Start the simulation run
    */
 
@@ -164,5 +168,3 @@ void booksim_close()
 
   return;
 }
-
-//} // extern "C"

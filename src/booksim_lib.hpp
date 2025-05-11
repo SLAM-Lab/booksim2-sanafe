@@ -29,8 +29,12 @@
 #define _BOOKSIM_LIB_H_
 
 #include "booksim_config.hpp"
-BookSimConfig booksim_init(int argc, char **argv);
-bool booksim_run(BookSimConfig const & config);
+
+struct SpikeEvent;
+
+void booksim_init();
+BookSimConfig booksim_load_config(int argc, char **argv);
+bool booksim_run(BookSimConfig const & config, std::vector<SpikeEvent> spike_events = {});
 void booksim_close();
 
 #endif // _BOOKSIM_LIB_H_

@@ -101,6 +101,13 @@ bool TrafficManagerSpike::OpenTrace() {
     return true;
 }
 
+void TrafficManagerSpike::PushTraceEvent(SpikeEvent &event)
+{
+    int src_core = event.src_hw.first * CORES_PER_TILE + event.src_hw.second;
+    pending_events[src_core].push(event);
+    return;
+}
+
 bool TrafficManagerSpike::_InjectionPossible(const int source, const int dest,
         const int subnet)
 {
@@ -143,7 +150,6 @@ bool TrafficManagerSpike::_InjectionPossible(const int source, const int dest,
     f->Free();
     return injection_possible;
 }
-
 
 void TrafficManagerSpike::_Inject() {
     INFO("injecting messages:%d\n", _time);
