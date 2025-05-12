@@ -1686,7 +1686,7 @@ bool TrafficManager::Run( )
         }
         _UpdateOverallStats();
     }
-  
+
     DisplayOverallStats();
     if(_print_csv_results) {
         DisplayOverallStatsCSV();

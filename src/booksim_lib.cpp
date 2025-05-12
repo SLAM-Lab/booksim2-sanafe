@@ -140,19 +140,17 @@ double booksim_run( BookSimConfig const & config)
   /*Start the simulation run
    */
 
-  double total_time; /* Amount of time we've run */
+  //double total_time; /* Amount of time we've run */
   struct timeval start_time, end_time; /* Time before/after user code */
-  total_time = 0.0;
+  //total_time = 0.0;
   gettimeofday(&start_time, NULL);
 
   trafficManager->Run() ;
 
 
   gettimeofday(&end_time, NULL);
-  total_time = ((double)(end_time.tv_sec) + (double)(end_time.tv_usec)/1000000.0)
-            - ((double)(start_time.tv_sec) + (double)(start_time.tv_usec)/1000000.0);
-
-  cout<<"Total run time "<<total_time<<endl;
+  // total_time = ((double)(end_time.tv_sec) + (double)(end_time.tv_usec)/1000000.0)
+  //           - ((double)(start_time.tv_sec) + (double)(start_time.tv_usec)/1000000.0);
 
   for (int i=0; i<subnets; ++i) {
 

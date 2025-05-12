@@ -1165,7 +1165,7 @@ bool TrafficManagerSpike::Run( )
         }
 
         // Empty any remaining packets
-        cout << "Draining remaining packets ..." << endl;
+        //cout << "Draining remaining packets ..." << endl;
         _empty_network = true;
         int empty_steps = 0;
 
@@ -1204,7 +1204,7 @@ bool TrafficManagerSpike::Run( )
 
         //for the love of god don't ever say "Time taken" anywhere else
         //the power script depend on it
-        cout << "Time taken is " << _time << " cycles" <<endl;
+        //cout << "Time taken is " << _time << " cycles" <<endl;
 
         if(_stats_out) {
             WriteStats(*_stats_out);
@@ -1212,7 +1212,9 @@ bool TrafficManagerSpike::Run( )
         _UpdateOverallStats();
     }
 
-    DisplayOverallStats();
+    // TODO: jboyle, don't display the stats all the time... especially when
+    //  running inside another simulator
+    //DisplayOverallStats();
     if(_print_csv_results) {
         DisplayOverallStatsCSV();
     }
