@@ -76,10 +76,14 @@ void booksim_init() {
   return;
 }
 
-BookSimConfig booksim_load_config(const std::string config_str)
+BookSimConfig booksim_load_config(const std::vector<std::string> config_vec)
 {
   BookSimConfig config{};
-  config.ParseString(config_str);
+
+  for (const std::string entry : config_vec)
+  {
+    config.ParseString(entry);
+  }
 
   string watch_out_file = config.GetStr( "watch_out" );
   gWatchOut = &cout;
