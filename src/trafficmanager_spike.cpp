@@ -1223,9 +1223,6 @@ bool TrafficManagerSpike::Run( )
 
 void TrafficManagerSpike::_ClearStats() {
     TrafficManager::_ClearStats();
-    //_pe_rx_busy = std::vector<bool>(_nodes, false);
-    //_rx_processing_cycles_left.clear();
     _tx_processing_cycles_left.clear();
     _message_count = std::vector<long long int>(_nodes, 0ULL);
-    pending_events.clear();
 }

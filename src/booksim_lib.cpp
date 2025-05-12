@@ -129,6 +129,7 @@ double booksim_run( BookSimConfig const & config)
 
   assert(trafficManager == NULL);
   trafficManager = TrafficManagerSpike::New( config, net ) ;
+  INFO("Pushing %zu spike events.\n", gSpikeEvents.size());
 
   for (auto &event : gSpikeEvents)
   {
@@ -179,7 +180,7 @@ void booksim_create_processing_event( int timestep, std::pair<std::string, int> 
 
 void booksim_create_spike_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, std::pair<int, int> dest_hw, double generation_latency, double processing_latency )
 {
-  SpikeEvent event;
+  SpikeEvent event{};
   event.event_type = SpikeEvent::Type::SPIKE_PACKET;
   event.src_neuron = src_neuron;
   event.src_hw = src_hw;
