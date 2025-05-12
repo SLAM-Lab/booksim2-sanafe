@@ -76,13 +76,10 @@ void booksim_init() {
   return;
 }
 
-BookSimConfig booksim_load_config(int argc, char **argv)
+BookSimConfig booksim_load_config(const std::string config_str)
 {
   BookSimConfig config{};
-  if ( !ParseArgs( &config, argc, argv ) ) {
-    cerr << "Usage: " << argv[0] << " configfile... [param=value...]" << endl;
-    return config;
-  }
+  config.ParseString(config_str);
 
   string watch_out_file = config.GetStr( "watch_out" );
   gWatchOut = &cout;
