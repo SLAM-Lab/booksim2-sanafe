@@ -163,7 +163,7 @@ public:
   virtual void ReadInputs( ) override;
   virtual void WriteOutputs( ) override;
   
-  void Display( ostream & os = cout ) const;
+  void Display( ostream & os = cout ) const override;
 
   virtual int GetUsedCredit(int o) const override;
   virtual int GetBufferOccupancy(int i) const override;

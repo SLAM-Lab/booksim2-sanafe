@@ -33,16 +33,16 @@
 
 class DragonFlyNew : public Network {
 
-  int _m;
+  //int _m;
   int _n;
-  int _r;
+  //int _r;
   int _k;
   int _p, _a, _g;
-  int _radix;
-  int _net_size;
-  int _stageout;
-  int _numinput;
-  int _stages;
+  //int _radix;
+  //int _net_size;
+  //int _stageout;
+  //int _numinput;
+  //int _stages;
   int _num_of_switch;
   int _grp_num_routers;
   int _grp_num_nodes;
