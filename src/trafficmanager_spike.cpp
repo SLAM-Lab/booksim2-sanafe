@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <queue>
 #include <string>
@@ -740,7 +741,7 @@ void TrafficManagerSpike::_Step()
                 INFO("occupancy after SendingFlit:%d\n", dest_buf->Occupancy());
 
                 if(_pri_type == network_age_based) {
-                    f->pri = numeric_limits<int>::max() - _time;
+                    f->pri = std::numeric_limits<int>::max() - _time;
                     assert(f->pri >= 0);
                 }
 
