@@ -16,4 +16,4 @@ add_compile_options(
 )
 
 add_subdirectory(src)
-export(TARGETS booksim booksim_static NAMESPACE booksim:: FILE booksimTargets.cmake)
+export(TARGETS booksim NAMESPACE booksim:: FILE booksimTargets.cmake)

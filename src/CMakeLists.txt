@@ -62,20 +62,22 @@ set_target_properties(booksim_common PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
+# Dynamic library version
+#  Disable for now, since it makes my life more difficult
 # The library with the booksim_lib API
-add_library(booksim SHARED
-    $<TARGET_OBJECTS:booksim_common>
-    ${CMAKE_CURRENT_SOURCE_DIR}/booksim_lib.cpp
-)
-target_include_directories(booksim PUBLIC ${BOOKSIM_INCLUDE_DIRS})
+# add_library(booksim SHARED
+#     $<TARGET_OBJECTS:booksim_common>
+#     ${CMAKE_CURRENT_SOURCE_DIR}/booksim_lib.cpp
+# )
+# target_include_directories(booksim PUBLIC ${BOOKSIM_INCLUDE_DIRS})
 
 # Static library version
-add_library(booksim_static STATIC
+add_library(booksim STATIC
     $<TARGET_OBJECTS:booksim_common>
     ${CMAKE_CURRENT_SOURCE_DIR}/booksim_lib.cpp
 )
-set_target_properties(booksim_static PROPERTIES OUTPUT_NAME booksim)
-target_include_directories(booksim_static PUBLIC ${BOOKSIM_INCLUDE_DIRS})
+set_target_properties(booksim PROPERTIES OUTPUT_NAME booksim)
+target_include_directories(booksim PUBLIC ${BOOKSIM_INCLUDE_DIRS})
 
 # The standalone executable with main.cpp
  add_executable(booksim_exe
@@ -86,7 +88,7 @@ set_target_properties(booksim_exe PROPERTIES OUTPUT_NAME booksim)
 target_include_directories(booksim_exe PRIVATE ${BOOKSIM_INCLUDE_DIRS})
 
 # Installation rules
-install(TARGETS booksim booksim_static booksim_exe
+install(TARGETS booksim booksim_exe
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
