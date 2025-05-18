@@ -80,7 +80,7 @@ BookSimConfig booksim_load_config(const std::vector<std::string> config_vec)
 {
   BookSimConfig config{};
 
-  for (const std::string entry : config_vec)
+  for (const std::string &entry : config_vec)
   {
     config.ParseString(entry);
   }
