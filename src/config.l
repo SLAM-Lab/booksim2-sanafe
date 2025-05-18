@@ -53,7 +53,7 @@ void yyerror( char * msg )
   config_error( msg, lineno );
 }
 
-int yywrap()
+int yywrap( void )
 {
   return 1;
 }
