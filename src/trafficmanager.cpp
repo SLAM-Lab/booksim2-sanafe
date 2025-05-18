@@ -301,7 +301,7 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
     //seed the network
     int seed;
     if(config.GetStr("seed") == "time") {
-      seed = int(time(NULL));
+      seed = static_cast<int>(time(NULL) % INT_MAX);
       cout << "SEED: seed=" << seed << endl;
     } else {
       seed = config.GetInt("seed");

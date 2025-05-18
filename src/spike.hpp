@@ -12,8 +12,8 @@ struct SpikeEvent {
     std::pair<std::string, int> src_neuron;
     std::pair<int, int> src_hw;
     std::pair<int, int> dest_hw;
-    int hops;
-    int spikes;
+    int hops{0};
+    int spikes{0};
     double generation_latency;
     double network_latency;
     double processing_latency;

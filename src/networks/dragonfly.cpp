@@ -430,7 +430,6 @@ void min_dragonflynew( const Router *r, const Flit *f, int in_channel,
   int dest_grp_ID=-1;
 
   if ( in_channel < gP ) {
-    out_vc = 0;
     f->ph = 0;
     if (dest_grp_ID == grp_ID) {
       f->ph = 1;

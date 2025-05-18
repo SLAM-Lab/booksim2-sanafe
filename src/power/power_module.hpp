@@ -120,26 +120,26 @@ protected:
   ////////////////////////////////End of Constants/////////////////////////////
 
   /////////////results///////////////////
-  double totalTime;
-  double channelWirePower;
-  double channelClkPower;
-  double channelDFFPower;
-  double channelLeakPower;
-  double inputReadPower;
-  double inputWritePower;
-  double inputLeakagePower;
-  double switchPower;
-  double switchPowerCtrl;
-  double switchPowerLeak;
-  double outputPower;
-  double outputPowerClk;
-  double outputCtrlPower;
-  double channelArea;
-  double switchArea;
-  double inputArea;
-  double outputArea;
-  double maxInputPort;
-  double maxOutputPort;
+  double totalTime{0.0};
+  double channelWirePower{0.0};
+  double channelClkPower{0.0};
+  double channelDFFPower{0.0};
+  double channelLeakPower{0.0};
+  double inputReadPower{0.0};
+  double inputWritePower{0.0};
+  double inputLeakagePower{0.0};
+  double switchPower{0.0};
+  double switchPowerCtrl{0.0};
+  double switchPowerLeak{0.0};
+  double outputPower{0.0};
+  double outputPowerClk{0.0};
+  double outputCtrlPower{0.0};
+  double channelArea{0.0};
+  double switchArea{0.0};
+  double inputArea{0.0};
+  double outputArea{0.0};
+  double maxInputPort{0.0};
+  double maxOutputPort{0.0};
 
 
   ////////////////////////

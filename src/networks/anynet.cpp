@@ -134,7 +134,7 @@ void AnyNet::_BuildNet( const Configuration &config ){
   
 
   //I need to keep track the output ports for each router during build
-  int * outport = (int*)malloc(sizeof(int)*_size);
+  std::vector<int> outport(_size);
   for(int i = 0; i<_size; i++){outport[i] = 0;}
 
   cout<<"==========================Node to Router =====================\n";
@@ -253,8 +253,8 @@ void AnyNet::buildRoutingTable(){
 //11/7/2012
 //basically djistra's, tested on a large dragonfly anynet configuration
 void AnyNet::route(int r_start){
-  int* dist = new int[_size];
-  int* prev = new int[_size];
+  std::vector<int> dist(_size);
+  std::vector<int> prev(_size);
   set<int> rlist;
   for(int i = 0; i<_size; i++){
     dist[i] =  numeric_limits<int>::max();

@@ -238,7 +238,7 @@ void KNCube::InsertRandomFaults( const Configuration &config )
     SaveRandomState( save_x, save_u );
     int fail_seed;
     if ( config.GetStr( "fail_seed" ) == "time" ) {
-      fail_seed = int( time( NULL ) );
+      fail_seed = static_cast<int>( time( NULL ) % INT_MAX );
       cout << "SEED: fail_seed=" << fail_seed << endl;
     } else {
       fail_seed = config.GetInt( "fail_seed" );

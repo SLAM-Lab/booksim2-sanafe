@@ -78,7 +78,7 @@ TrafficPattern * TrafficPattern::New(string const & pattern, int nodes,
     if(params.empty()) {
       if(config) {
 	if(config->GetStr("perm_seed") == "time") {
-	  perm_seed = int(time(NULL));
+	  perm_seed = static_cast<int>(time(NULL) % INT_MAX);
 	  cout << "SEED: perm_seed=" << perm_seed << endl;
 	} else {
 	  perm_seed = config->GetInt("perm_seed");

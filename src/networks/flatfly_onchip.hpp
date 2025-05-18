@@ -36,15 +36,15 @@
 
 class FlatFlyOnChip : public Network {
 
-  int _m;
+  int _m{};
   int _n;
   int _r;
   int _k;
   int _c;
-  int _radix;
-  int _net_size;
-  int _stageout;
-  int _numinput;
+  int _radix{};
+  int _net_size{};
+  int _stageout{};
+  int _numinput{};
   int _stages;
   int _num_of_switch;
 
