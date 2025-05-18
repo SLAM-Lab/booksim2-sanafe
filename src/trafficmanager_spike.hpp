@@ -38,7 +38,7 @@ protected:
 
     double clock_period;
 
-    virtual void _RetireFlit(Flit* flit, int dest);
+    virtual void _RetireFlit(Flit* flit, int dest) override;
     //virtual bool _ProcessWaiting(int input, int output);
     //virtual void _GeneratePacket(int source, int size, int cl, int time);
     virtual void _Inject();

@@ -115,7 +115,7 @@ class IQRouter : public Router {
   bool _ReceiveFlits( );
   bool _ReceiveCredits( );
 
-  virtual void _InternalStep( );
+  virtual void _InternalStep( ) override;
   bool _rxBusy() const override;
 
   bool _SWAllocAddReq(int input, int vc, int output);
@@ -158,24 +158,24 @@ public:
   
   virtual ~IQRouter( );
   
-  virtual void AddOutputChannel(FlitChannel * channel, CreditChannel * backchannel);
+  virtual void AddOutputChannel(FlitChannel * channel, CreditChannel * backchannel) override;
 
-  virtual void ReadInputs( );
-  virtual void WriteOutputs( );
+  virtual void ReadInputs( ) override;
+  virtual void WriteOutputs( ) override;
   
   void Display( ostream & os = cout ) const;
 
-  virtual int GetUsedCredit(int o) const;
-  virtual int GetBufferOccupancy(int i) const;
+  virtual int GetUsedCredit(int o) const override;
+  virtual int GetBufferOccupancy(int i) const override;
 
 #ifdef TRACK_BUFFERS
   virtual int GetUsedCreditForClass(int output, int cl) const;
   virtual int GetBufferOccupancyForClass(int input, int cl) const;
 #endif
 
-  virtual vector<int> UsedCredits() const;
-  virtual vector<int> FreeCredits() const;
-  virtual vector<int> MaxCredits() const;
+  virtual vector<int> UsedCredits() const override;
+  virtual vector<int> FreeCredits() const override;
+  virtual vector<int> MaxCredits() const override;
 
   SwitchMonitor const * const GetSwitchMonitor() const {return _switchMonitor;}
   BufferMonitor const * const GetBufferMonitor() const {return _bufferMonitor;}
