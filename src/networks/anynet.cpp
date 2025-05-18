@@ -299,14 +299,14 @@ void AnyNet::route(int r_start){
 	//cout<<"node "<<iter->first<<" port "<< iter->second.first<<endl;
       }
     } else {
-      int distance=0;
+      //int distance=0;
       int neighbor=i;
       while(prev[neighbor]!=r_start){
 	assert(router_list[1][neighbor].count(prev[neighbor])>0);
-	distance+=router_list[1][prev[neighbor]][neighbor].second;//REVERSE lat
+	//distance+=router_list[1][prev[neighbor]][neighbor].second;//REVERSE lat
 	neighbor= prev[neighbor];
       }
-      distance+=router_list[1][prev[neighbor]][neighbor].second;//lat
+      //distance+=router_list[1][prev[neighbor]][neighbor].second;//lat
 
       assert( router_list[1][r_start].count(neighbor)!=0);
       int port = router_list[1][r_start][neighbor].first;
