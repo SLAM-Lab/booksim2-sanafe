@@ -67,6 +67,11 @@ vector<deque<pair<int, int>>> gReceiverBuffers{};
 
 vector<SpikeEvent> gSpikeEvents{};
 
+std::map<long int, SpikeEvent> _spike_stats{};
+std::list<SpikeEvent> _placeholder_spikes{};
+
+int _time{0LL};
+
 void booksim_init() {
   if (initialized) {
     std::cerr << "BookSim2 is already initialized!" << std::endl;
@@ -173,19 +178,21 @@ void booksim_create_processing_event( int timestep, std::pair<std::string, int> 
 {
   SpikeEvent event = SpikeEvent::CreateProcessingEvent(timestep, src_neuron, src_hw, generation_latency);
   gSpikeEvents.push_back(event);
+  event.mid = -1;
 
   return;
 }
 
-void booksim_create_spike_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, std::pair<int, int> dest_hw, double generation_latency, double processing_latency )
+void booksim_create_spike_event( long int id, int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, std::pair<int, int> dest_hw, double generation_latency, double processing_latency )
 {
   SpikeEvent event{};
   event.event_type = SpikeEvent::Type::SPIKE_PACKET;
+  event.mid = id;
   event.src_neuron = src_neuron;
   event.src_hw = src_hw;
   event.dest_hw = dest_hw;
-  event.generation_latency = generation_latency;
-  event.processing_latency = processing_latency;
+  event.generation_delay = generation_latency;
+  event.processing_delay = processing_latency;
 
   gSpikeEvents.push_back(event);
 

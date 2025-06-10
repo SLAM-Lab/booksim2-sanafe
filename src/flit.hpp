@@ -72,8 +72,9 @@ public:
   bool watch;
   int  subnetwork;
 
-  bool credit_returned{false}; // TODO: jaboyle added by me!
-  
+  bool credit_returned{false}; // TODO: jboyle added by me!
+  long int mid{-1}; // TODO: jboyle added by me!
+
   // intermediate destination (if any)
   mutable int intm;
 

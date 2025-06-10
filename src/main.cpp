@@ -97,6 +97,10 @@ ostream * gWatchOut;
 vector<int> gReceiverBusyCycles{};
 vector<deque<pair<int, int>>> gReceiverBuffers{};
 
+std::map<long int, SpikeEvent> _spike_stats{};
+std::list<SpikeEvent> _placeholder_spikes{};
+
+int _time{0LL};
 
 /////////////////////////////////////////////////////////////////////////////
 

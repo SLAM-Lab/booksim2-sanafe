@@ -105,7 +105,16 @@ bool TrafficManagerSpike::OpenTrace() {
 void TrafficManagerSpike::PushTraceEvent(SpikeEvent &event)
 {
     int src_core = event.src_hw.first * CORES_PER_TILE + event.src_hw.second;
-    pending_events[src_core].push(event);
+    // jboyle: Create the event in a global (for now) mapping of message IDs
+    //  and spike events. We need to track the spike info during the whole
+    //  simulation.
+    // TODO: Once the flit is retired we either need to hold onto it until the
+    //  end of the simulation (return via memory) or write it to file and remove
+    //  the entry
+    assert(event.mid >= 0);
+    _spike_stats[event.mid] = event;
+    // Now push a ref to the newly created message to the pending queue
+    pending_events[src_core].push(&_spike_stats.at(event.mid));
     return;
 }
 
@@ -180,7 +189,7 @@ void TrafficManagerSpike::_Inject() {
             // Busy flag is set, which means the next message just finished
             //  being generated and we can fetch the next spike message
             if ( _pe_tx_busy[n] ) {
-                SpikeEvent next_event = pending_events[n].front();
+                SpikeEvent &next_event = *(pending_events[n].front());
                 int dest_core = next_event.dest_hw.first * CORES_PER_TILE +
                         next_event.dest_hw.second;
                 INFO("Ready to inject next spike packet at PE:%d\n", n);
@@ -190,35 +199,42 @@ void TrafficManagerSpike::_Inject() {
                 if (dyn_subnet_alloc) { // TODO: set in config file
                     for (subnet = 0; subnet < _subnets; ++subnet) {
                         if (_InjectionPossible(n, dest_core, subnet)) {
+                            next_event.injection_cycle = _time;
                             int processing_cycles = CyclesFromTime(
-                            next_event.processing_latency);
+                                next_event.processing_delay);
                             // Network is ready so send the message
                             INFO("Injecting packet from core %d into net at t:%d\n",
                                 n, _time);
                             int packet_id = _GeneratePacket(n, 1, 0, _time,
-                                    dest_core, processing_cycles, subnet);
-                            INFO("New flit fid:%d src:%d dest:%d\n", packet_id, n,
-                                    dest_core);
+                                    dest_core, processing_cycles, subnet,
+                                    next_event.mid);
+                            INFO("New flit fid:%d mid:%ld src:%d dest:%d\n",
+                                    packet_id, next_event.mid, n, dest_core);
                             _flit_processing_cycles[packet_id] = processing_cycles;
                             INFO("Flit fid:%d will have %d processing cycles\n",
                                     packet_id, processing_cycles);
                             // Remove the pending event for this core
+                            sent_events[n].push(&next_event);
                             pending_events[n].pop();
                             _pe_tx_busy[n] = false;
                             break;
+                        } else {
+                            ++next_event.blocked_cycles;
                         }
                     }
                 } else {
                     subnet = _message_count[n] % _subnets;
                     // If core has processed neurons and generated a message
                     if (_InjectionPossible(n, dest_core, subnet)) {
+                        next_event.injection_cycle = _time;
                         int processing_cycles = CyclesFromTime(
-                            next_event.processing_latency);
+                            next_event.processing_delay);
                         // Network is ready so send the message
                         INFO("Injecting packet from core %d into net at t:%d\n",
                             n, _time);
                         int packet_id = _GeneratePacket(n, 1, 0, _time,
-                                dest_core, processing_cycles, subnet);
+                                dest_core, processing_cycles, subnet,
+                                next_event.mid);
                         INFO("Node %d sent %lld messages.\n", n, _message_count[n]);
                         ++(_message_count[n]);
                         INFO("New flit fid:%d src:%d dest:%d\n", packet_id, n,
@@ -227,23 +243,29 @@ void TrafficManagerSpike::_Inject() {
                         INFO("Flit fid:%d will have %d processing cycles\n",
                                 packet_id, processing_cycles);
                         // Remove the pending event for this core
+                        sent_events[n].push(&next_event);
                         pending_events[n].pop();
                         _pe_tx_busy[n] = false;
                     } else {
                         INFO("Could not inject packet from core %d into net\n", n);
+                        ++next_event.blocked_cycles;
                     }
                 }
             }
             if (!_pe_tx_busy[n] && !pending_events[n].empty()) {
                 // No message currently ready, so get the next one
                 INFO("Getting next event (spike/processing)\n");
-                SpikeEvent next_event = pending_events[n].front();
+                SpikeEvent &next_event = *(pending_events[n].front());
+                next_event.injection_cycle = _time;
                 int injection_cycles = CyclesFromTime(
-                        next_event.generation_latency);
+                        next_event.generation_delay);
                 if (next_event.event_type ==  SpikeEvent::Type::PROCESSING_ONLY) {
                     INFO("Dummy event now handled for core %d cycles:%d\n", n,
                             injection_cycles);
                     pending_events[n].pop();
+                    INFO("pending:%zu\n", pending_events[n].size());
+                    // The processing_only placeholder event should always be
+                    //  the last event handled for this core
                     assert(pending_events[n].empty());
                 } else {
                     INFO("Getting next spike packet for core %d cycles:%d\n",
@@ -267,14 +289,18 @@ void TrafficManagerSpike::ReadNextTrace() {
         std::string token;
 
         // Parse CSV format
+        long int mid;
         int timestep;
-	std::pair<std::string, int> src_neuron;
+    	std::pair<std::string, int> src_neuron;
         std::pair<int, int> src_hw;
         std::string dest_hw_str;
         double generation_latency;
 
         // Parse basic fields
         getline(ss, token, ','); timestep = stoi(token);
+
+        // Parse message ID
+        getline(ss, token, ','); mid = stoi(token);
 
         // Parse src_neuron
         getline(ss, token, ',');
@@ -300,6 +326,11 @@ void TrafficManagerSpike::ReadNextTrace() {
         getline(ss, token, ','); // hops
         getline(ss, token, ','); // spikes
 
+        // Skip timestamps
+        getline(ss, token, ','); // sent
+        getline(ss, token, ','); // received
+        getline(ss, token, ','); // retired/processed
+
         // Get generation latency
         getline(ss, token, ',');
         generation_latency = stod(token);
@@ -314,11 +345,14 @@ void TrafficManagerSpike::ReadNextTrace() {
             );
             INFO("Adding dummy processing event, generation_latency:%lf\n", generation_latency);
             int src_core = event.src_hw.first * CORES_PER_TILE + event.src_hw.second;
-            pending_events[src_core].push(event);
+            // Dummy spike messages need to be stored somewhere permanently
+            _placeholder_spikes.push_back(event);
+            pending_events[src_core].push(&_placeholder_spikes.back());
         } else {
             // This is a regular spike packet event
             SpikeEvent event;
             event.event_type = SpikeEvent::Type::SPIKE_PACKET;
+            event.mid = mid;
             event.timestep = timestep;
             event.src_neuron = src_neuron;
             event.src_hw = src_hw;
@@ -331,15 +365,20 @@ void TrafficManagerSpike::ReadNextTrace() {
             );
 
             // Parse remaining fields
-            event.generation_latency = generation_latency;
-            getline(ss, token, ','); event.network_latency = stod(token);
-            getline(ss, token, ','); event.processing_latency = stod(token);
-            getline(ss, token, ','); event.blocking_latency = stod(token);
+            event.generation_delay = generation_latency;
+            getline(ss, token, ','); event.processing_delay = stod(token);
+            // Ignore the blocking and min_hop_delays which end the file
+            //getline(ss, token, ','); event.network_latency = stod(token);
+            //getline(ss, token, ','); event.blocking_latency = stod(token);
 
             INFO("Adding spike event: generation_latency:%e processing_latency:%e\n",
-                    event.generation_latency, event.processing_latency);
+                    event.generation_delay, event.processing_delay);
             int src_core = event.src_hw.first * CORES_PER_TILE + event.src_hw.second;
-            pending_events[src_core].push(event);
+            assert(event.mid >= 0);
+            // Create the event in a global (for now) mapping of all spikes
+            _spike_stats[event.mid] = event;
+            // Now push a ref to the newly created message to the pending queue
+            pending_events[src_core].push(&_spike_stats.at(event.mid));
             INFO("Pushed event to PE:%d Now %zu pending spike events\n",
                     src_core, pending_events[src_core].size());
         }
@@ -359,7 +398,7 @@ bool TrafficManagerSpike::_Pending() {
     // Use std::any_of to check if any PE's event queue is not empty
     return std::any_of(pending_events.begin(), pending_events.end(),
         [](std::pair<const int,
-            const std::queue<SpikeEvent>> src_core_pending_q_pair) {
+            const std::queue<SpikeEvent *>> src_core_pending_q_pair) {
             return !src_core_pending_q_pair.second.empty();
     });
 }
@@ -968,7 +1007,8 @@ void TrafficManagerSpike::_RetireFlit(Flit* f, int dest) {
 }
 
 int TrafficManagerSpike::_GeneratePacket( int source, int stype,
-        int cl, int time, int dest, int processing_cycles, int subnet)
+        int cl, int time, int dest, int processing_cycles, int subnet,
+        long int mid) // jboyle: Spike message id
 {
     assert(stype!=0);
 
@@ -1046,6 +1086,7 @@ int TrafficManagerSpike::_GeneratePacket( int source, int stype,
         f->id     = _cur_id++;
         assert(_cur_id);
         f->pid    = pid;
+        f->mid = mid; // jboyle: Spike message id
         f->watch  = watch | (gWatchOut && (_flits_to_watch.count(f->id) > 0));
         f->subnetwork = subnetwork;
         f->src    = source;
@@ -1218,6 +1259,22 @@ bool TrafficManagerSpike::Run( )
     //DisplayOverallStats();
     if(_print_csv_results) {
         DisplayOverallStatsCSV();
+    }
+
+    // jboyle: Print all the spike message info
+    for (auto &[core, q]: sent_events)
+    {
+        while (!q.empty())
+        {
+            SpikeEvent &event = *(q.front());
+
+            // Calculate other metrics from timestamps
+            event.network_cycles = event.ejection_cycle - event.injection_cycle;
+
+            INFO("event %ld blocked:%lld network:%lld\n", event.mid,
+                    event.blocked_cycles, event.network_cycles);
+            q.pop();
+        }
     }
 
     return true;

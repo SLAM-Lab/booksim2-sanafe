@@ -25,7 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#if 0
+#if 1
 #define INFO(...) do { \
     fprintf(stdout, "[%s:%d:%s()] ", __FILE__, __LINE__, __func__); \
     fprintf(stdout, __VA_ARGS__); \
@@ -43,6 +43,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <limits>
+#include <map>
 
 #include "globals.hpp"
 #include "random_utils.hpp"
@@ -55,6 +56,7 @@
 #include "allocator.hpp"
 #include "switch_monitor.hpp"
 #include "buffer_monitor.hpp"
+#include "spike.hpp"
 
 IQRouter::IQRouter( Configuration const & config, Module *parent, 
 		    string const & name, int id, int inputs, int outputs )
@@ -303,7 +305,6 @@ void IQRouter::WriteOutputs( )
 // read inputs
 //------------------------------------------------------------------------------
 
-
 bool IQRouter::_ReceiveFlits( )
 {
   bool activity = false;
@@ -316,7 +317,12 @@ bool IQRouter::_ReceiveFlits( )
 #ifdef TRACK_FLOWS
       ++_received_flits[f->cl][input];
 #endif
-
+      // jboyle: Track for each spike trace
+      if(f->mid >= 0)
+      {
+        SpikeEvent &spike = _spike_stats.at(f->mid);
+        spike.hop_cycles.emplace_back(_time);
+      }
       if(f->watch) {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
         << "Received flit " << f->id
@@ -2250,6 +2256,10 @@ void IQRouter::_SwitchUpdate( )
         INFO("fid:%d core:%d setting rx busy for %d cycles\n",
             f->pid, core_id, gReceiverBusyCycles[core_id]);
       }
+      INFO("fid:%d sid:%ld src:%d dst:%d\n", f->pid, f->mid, f->src, f->dest);
+      assert(f->mid >= 0);
+      SpikeEvent &spike = _spike_stats.at(f->mid);
+      spike.ejection_cycle = _time;
     }
 
     _switchMonitor->traversal(input, output, f) ;

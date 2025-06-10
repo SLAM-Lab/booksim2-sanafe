@@ -232,7 +232,6 @@ protected:
 
   int _cur_id;
   int _cur_pid;
-  int _time;
 
   set<int> _flits_to_watch;
   set<int> _packets_to_watch;
@@ -271,7 +270,7 @@ protected:
   bool _PacketsOutstanding( ) const;
   
   virtual int  _IssuePacket( int source, int cl );
-  void _GeneratePacket( int source, int size, int cl, int time );
+  void _GeneratePacket( int source, int size, int cl, int time, int mid );
 
   virtual void _ClearStats( );
 

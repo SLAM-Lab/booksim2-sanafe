@@ -29,9 +29,13 @@
 #define _GLOBALS_HPP_
 #include <string>
 #include <vector>
+#include <map>
+#include <list>
 #include <iostream>
 #include <deque>
 #include <utility>
+
+#include "spike.hpp"
 
 /*all declared in main.cpp*/
 
@@ -57,5 +61,12 @@ extern std::ostream * gWatchOut;
 // jboyle: Added to track receiving cores
 extern std::vector<int> gReceiverBusyCycles;
 extern std::vector<std::deque<std::pair<int, int>>> gReceiverBuffers;
+
+// jboyle: Added to track all spikes
+extern std::map<long int, SpikeEvent> _spike_stats;
+extern std::list<SpikeEvent> _placeholder_spikes;
+
+// jboyle: We need the cycle time elsewhere now
+extern int _time;
 
 #endif

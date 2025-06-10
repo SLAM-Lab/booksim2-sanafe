@@ -10,7 +10,7 @@
 #define CORES_PER_TILE 4
 
 // Custom debug print routine with file and line number..
-#if 0
+#if 1
 #define INFO(...) do { \
     fprintf(stdout, "[%s:%d:%s()] ", __FILE__, __LINE__, __func__); \
     fprintf(stdout, __VA_ARGS__); \
@@ -34,7 +34,8 @@ protected:
     std::map<int, long long int> _rx_processing_cycles_left;
     std::map<int, long long int> _tx_processing_cycles_left;
     std::map<int, long long int> _flit_processing_cycles;
-    std::map<int, std::queue<SpikeEvent>> pending_events;
+    std::map<int, std::queue<SpikeEvent *>> pending_events;
+    std::map<int, std::queue<SpikeEvent *>> sent_events;
 
     double clock_period;
 
@@ -66,7 +67,7 @@ protected:
 private:
     bool OpenTrace();
     bool _InjectionPossible(const int source, const int dest, const int subnet);
-    int _GeneratePacket(int source, int stype, int c1, int time, int dest, int processing_cycles, int subnet);
+    int _GeneratePacket(int source, int stype, int c1, int time, int dest, int processing_cycles, int subnet, long int mid);
 };
 
 #endif

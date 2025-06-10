@@ -56,7 +56,7 @@ TrafficManager * TrafficManager::New(Configuration const & config,
 }
 
 TrafficManager::TrafficManager( const Configuration &config, const vector<Network *> & net )
-    : Module( 0, "traffic_manager" ), _net(net), _empty_network(false), _deadlock_timer(0), _reset_time(0), _drain_time(-1), _cur_id(0), _cur_pid(0), _time(0)
+    : Module( 0, "traffic_manager" ), _net(net), _empty_network(false), _deadlock_timer(0), _reset_time(0), _drain_time(-1), _cur_id(0), _cur_pid(0)
 {
 
     _nodes = _net[0]->NumNodes( );
@@ -783,7 +783,7 @@ int TrafficManager::_IssuePacket( int source, int cl )
 }
 
 void TrafficManager::_GeneratePacket( int source, int stype, 
-                                      int cl, int time )
+                                      int cl, int time, int mid )
 {
     assert(stype!=0);
 
@@ -933,7 +933,7 @@ void TrafficManager::_Inject(){
                     if ( stype != 0 ) { //generate a packet
                         _GeneratePacket( input, stype, c, 
                                          _include_queuing==1 ? 
-                                         _qtime[input][c] : _time );
+                                         _qtime[input][c] : _time, -1 );
                         generated = true;
                     }
                     // only advance time if this is not a reply packet

@@ -33,7 +33,7 @@
 
 void booksim_init();
 BookSimConfig booksim_load_config(const std::vector<std::string> config_vec);
-void booksim_create_spike_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, std::pair<int, int> dest_hw, double generation_latency, double processing_latency );
+void booksim_create_spike_event( long int id, int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, std::pair<int, int> dest_hw, double generation_latency, double processing_latency );
 void booksim_create_processing_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, double generation_latency );
 double booksim_run(BookSimConfig const & config);
 void booksim_close();
