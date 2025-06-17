@@ -37,6 +37,9 @@
 class Flit {
 
 public:
+  // jboyle: Hack, make this public
+  Flit();
+  ~Flit() {}
 
   const static int NUM_FLIT_TYPES = 5;
   enum FlitType { READ_REQUEST  = 0, 
@@ -94,9 +97,6 @@ public:
   static void FreeAll();
 
 private:
-
-  Flit();
-  ~Flit() {}
 
   static stack<Flit *> _all;
   static stack<Flit *> _free;

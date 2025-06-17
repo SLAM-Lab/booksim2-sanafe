@@ -28,7 +28,6 @@ use_noc_latency = 0;
 // Flow control
 num_vcs     = 1;
 vc_buf_size = 8;
-wait_for_tail_credit = 1;
 
 // Router architecture
 vc_allocator = islip;
@@ -37,8 +36,6 @@ alloc_iters  = 1;
 
 credit_delay   = 0;
 routing_delay  = 0;
-//credit_delay   = 1;
-//routing_delay  = 1;
 vc_alloc_delay = 1;
 sw_alloc_delay = 1;
 

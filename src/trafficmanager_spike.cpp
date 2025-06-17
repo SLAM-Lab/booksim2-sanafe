@@ -152,6 +152,7 @@ bool TrafficManagerSpike::_InjectionPossible(const int source, const int dest,
             break;
         } else {
             INFO("vc:%d is full\n", vc);
+            INFO("vc:%d occupancy:%d\n", vc, dest_buf->OccupancyFor(vc));
         }
     }
 
@@ -160,6 +161,8 @@ bool TrafficManagerSpike::_InjectionPossible(const int source, const int dest,
     f->Free();
     return injection_possible;
 }
+
+#include <numeric>
 
 void TrafficManagerSpike::_Inject() {
     INFO("injecting messages:%d\n", _time);
@@ -199,9 +202,9 @@ void TrafficManagerSpike::_Inject() {
                 if (dyn_subnet_alloc) { // TODO: set in config file
                     for (subnet = 0; subnet < _subnets; ++subnet) {
                         if (_InjectionPossible(n, dest_core, subnet)) {
-                            next_event.injection_cycle = _time;
                             int processing_cycles = CyclesFromTime(
                                 next_event.processing_delay);
+
                             // Network is ready so send the message
                             INFO("Injecting packet from core %d into net at t:%d\n",
                                 n, _time);
@@ -218,17 +221,15 @@ void TrafficManagerSpike::_Inject() {
                             pending_events[n].pop();
                             _pe_tx_busy[n] = false;
                             break;
-                        } else {
-                            ++next_event.blocked_cycles;
                         }
                     }
-                } else {
+                } else { // subnet chosen is fixed given the message
                     subnet = _message_count[n] % _subnets;
                     // If core has processed neurons and generated a message
                     if (_InjectionPossible(n, dest_core, subnet)) {
-                        next_event.injection_cycle = _time;
                         int processing_cycles = CyclesFromTime(
                             next_event.processing_delay);
+
                         // Network is ready so send the message
                         INFO("Injecting packet from core %d into net at t:%d\n",
                             n, _time);
@@ -248,17 +249,59 @@ void TrafficManagerSpike::_Inject() {
                         _pe_tx_busy[n] = false;
                     } else {
                         INFO("Could not inject packet from core %d into net\n", n);
-                        ++next_event.blocked_cycles;
                     }
                 }
             }
             if (!_pe_tx_busy[n] && !pending_events[n].empty()) {
-                // No message currently ready, so get the next one
+                // No message currently ready, so get the next one. This message
+                //  will have some fixed generation delay that must elapse
+                //  before it can be actually injected into the NoC (see code
+                //  above)
                 INFO("Getting next event (spike/processing)\n");
                 SpikeEvent &next_event = *(pending_events[n].front());
-                next_event.injection_cycle = _time;
+                next_event.tx_start_cycle = _time;
+
+                if (next_event.event_type == SpikeEvent::Type::SPIKE_PACKET) {
+                    // For spike messages (not placeholders), get a snapshot
+                    //  of the current NoC state using some simple heuristics
+                    int src_core = (next_event.src_hw.first * CORES_PER_TILE) +
+                        next_event.src_hw.second;
+                    int dest_core = (next_event.dest_hw.first * CORES_PER_TILE) +
+                        next_event.src_hw.second;
+                    INFO("src core:%d, dst core:%d\n", src_core, dest_core);
+
+                    int subnet = _message_count[n] % _subnets;
+                    vector<int> path = _GetRouteOccupancy(n, dest_core, subnet);
+                    next_event.buffered_along_path =
+                        accumulate(path.begin(), path.end(), 0);
+                    next_event.max_buffered_along_path =
+                        *(max_element(path.begin(), path.end()));
+                    for (auto b : path) {
+                        next_event.buffered_squared += b*b;
+                    }
+                    cout << "path delays:";
+                    for (const int delay : path) {
+                        cout << delay << " ";
+                    }
+                    cout << "total:" << accumulate(path.begin(), path.end(), 0);
+                    cout << "\n";
+
+                    // Calculate the global average processing delay in cycles
+                    double total_processing_cycles = 0.0;
+                    size_t total_flits = 0;
+                    for(auto &flits : _total_in_flight_flits) {
+                        for (auto &flit : flits) {
+                            total_processing_cycles += flit.second->processing_cycles;
+                        }
+                        total_flits += flits.size();
+                    }
+                    next_event.mean_processing_delay = (total_flits > 0) ?
+                            total_processing_cycles / total_flits : 0.0;
+                }
+
                 int injection_cycles = CyclesFromTime(
                         next_event.generation_delay);
+                next_event.tx_ready_cycle = _time + injection_cycles;
                 if (next_event.event_type ==  SpikeEvent::Type::PROCESSING_ONLY) {
                     INFO("Dummy event now handled for core %d cycles:%d\n", n,
                             injection_cycles);
@@ -290,6 +333,8 @@ void TrafficManagerSpike::ReadNextTrace() {
 
         // Parse CSV format
         long int mid;
+        int hops;
+        int spikes;
         int timestep;
     	std::pair<std::string, int> src_neuron;
         std::pair<int, int> src_hw;
@@ -322,9 +367,9 @@ void TrafficManagerSpike::ReadNextTrace() {
         getline(ss, token, ',');
         dest_hw_str = token;
 
-        // Skip hops and spikes
-        getline(ss, token, ','); // hops
-        getline(ss, token, ','); // spikes
+        // Get hops and spikes
+        getline(ss, token, ','); hops = stoi(token);
+        getline(ss, token, ','); spikes = stoi(token);
 
         // Skip timestamps
         getline(ss, token, ','); // sent
@@ -356,6 +401,8 @@ void TrafficManagerSpike::ReadNextTrace() {
             event.timestep = timestep;
             event.src_neuron = src_neuron;
             event.src_hw = src_hw;
+            event.hops = hops;
+            event.spikes = spikes;
 
             // Parse destination hardware address
             dot_pos = dest_hw_str.find('.');
@@ -680,6 +727,7 @@ void TrafficManagerSpike::_Step()
                             if(dest_buf->IsFullFor(vc)) {
                                 //if(cf->watch) {
                                     INFO("output vc:%d is full\n", vc);
+                                    INFO("output vc:%d occupancy:%d\n", vc, dest_buf->OccupancyFor(vc));
                                   //  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                    //            << "  Output VC " << vc << " is full." << endl;
                                 //}
@@ -711,6 +759,7 @@ void TrafficManagerSpike::_Step()
                            //            << " is full for flit " << cf->id
                            //            << "." << endl;
                            INFO("selected output vc:%d is full for flid fid:%d\n", cf->vc, cf->pid);
+                           INFO("selected output vc:%d occupancy:%d\n", cf->vc, dest_buf->OccupancyFor(cf->vc));
                         //}
                     } else {
                         f = cf;
@@ -1070,7 +1119,7 @@ int TrafficManagerSpike::_GeneratePacket( int source, int stype,
     //int subnetwork = ((packet_type == Flit::ANY_TYPE) ?
     //                  RandomInt(_subnets-1) :
     //                  _subnet[packet_type]);
-    // jboyle change
+    // jboyle: allow for different ways of choosing the subnet to use
     int subnetwork = subnet;
 
     if ( watch ) {
@@ -1262,17 +1311,49 @@ bool TrafficManagerSpike::Run( )
     }
 
     // jboyle: Print all the spike message info
+    ofstream message_trace("messages_cycle_accurate.csv");
+    message_trace << "mid,blocked_cycles,network_cycles,buffered_path,mean_process_cycles,max_buffered,buffered_squared\n";
     for (auto &[core, q]: sent_events)
     {
         while (!q.empty())
         {
             SpikeEvent &event = *(q.front());
 
-            // Calculate other metrics from timestamps
+            // Calculate additional timestamps using raw hop information
+            assert(static_cast<size_t>(event.hops) == event.hop_cycles.size() - 1UL);
+            event.injection_cycle = event.hop_cycles[0];
+            assert(event.injection_cycle >= event.tx_ready_cycle);
+            event.blocked_cycles = event.injection_cycle - event.tx_ready_cycle;
             event.network_cycles = event.ejection_cycle - event.injection_cycle;
 
-            INFO("event %ld blocked:%lld network:%lld\n", event.mid,
-                    event.blocked_cycles, event.network_cycles);
+            // Print the breakdown of delays, I'm not sure the best way of
+            //  saving this to csv yet
+            INFO("hop delays (mid:%ld) ", event.mid);
+            for(const auto cycles : event.hop_cycles) {
+                printf("%lld ", cycles);
+            }
+            printf("\n");
+
+            assert(event.tx_start_cycle >= 0);
+            assert(event.tx_ready_cycle >= 0);
+            assert(event.injection_cycle >= 0);
+            assert(event.ejection_cycle >= 0);
+
+            INFO("event %ld blocked:%lld network:%lld hops:%zu\n", event.mid,
+                    event.blocked_cycles, event.network_cycles,
+                    event.hop_cycles.size() - 1UL);
+            message_trace << event.mid << ',';
+            message_trace << event.blocked_cycles << ',';
+            message_trace << event.network_cycles << ',';
+            // Two additional metrics to compare against SANA-FE's internal
+            //  NoC model, capturing the state of the message path and the
+            //  overall global average message processing delay. It may be that
+            //  a global average is too coarse-grained and we need to capture
+            //  the average for each path etc
+            message_trace << event.buffered_along_path << ',';
+            message_trace << event.mean_processing_delay << ',';
+            message_trace << event.max_buffered_along_path << ',';
+            message_trace << event.buffered_squared << '\n';
             q.pop();
         }
     }
@@ -1285,4 +1366,103 @@ void TrafficManagerSpike::_ClearStats() {
     TrafficManager::_ClearStats();
     _tx_processing_cycles_left.clear();
     _message_count = std::vector<long long int>(_nodes, 0ULL);
+}
+
+vector<int> TrafficManagerSpike::_GetRouteOccupancy(int src_node, int dest_node, int subnet) {
+    vector<int> path;
+    vector<int> path_occupancy;
+
+    // Create a proper flit for routing
+    Flit temp_flit;
+    temp_flit.src = src_node;
+    temp_flit.dest = dest_node;
+    temp_flit.cl = 0; // traffic class
+    temp_flit.type = Flit::ANY_TYPE;
+    temp_flit.vc = 0;
+    temp_flit.head = true;
+    temp_flit.tail = true;
+
+    INFO("***\n");
+    INFO("getting path src:%d dest:%d\n", src_node, dest_node);
+
+    // Find the first router from source node
+    // The injection channel _inject[src_node] tells us which router the source connects to
+    const FlitChannel* inject_channel = _net[subnet]->GetInject(src_node);
+    if (!inject_channel) {
+        INFO("No injection channel found for source node %d\n", src_node);
+        return path_occupancy;
+    }
+
+    const Router* current_router = inject_channel->GetSink();
+    int current_port = inject_channel->GetSinkPort();
+    int current_router_id = current_router->GetID();
+    int buffer_occupancy = current_router->GetBufferOccupancy(current_port);
+
+    INFO("Starting from router %d (connected to source node %d)\n", current_router_id, src_node);
+    INFO("adding %d to path\n", current_router_id);
+    path.push_back(current_router_id);
+    path_occupancy.push_back(buffer_occupancy);
+
+    int hop_count = 0;
+    const int max_hops = gNodes;
+
+    while((current_router_id != dest_node) && (hop_count < max_hops)) {
+        Router* router = _router[subnet][current_router_id];
+        if (!router) {
+            INFO("Router %d not found in subnet %d\n", current_router_id, subnet);
+            break;
+        }
+
+        // Now figure out the next step in the routing for this flit
+        OutputSet outputs;
+
+        // Call the routing function directly
+        _rf(router, &temp_flit, -1, &outputs, false);
+
+        // Get the output port
+        set<OutputSet::sSetElement> setlist = outputs.GetSet();
+        if(setlist.empty()) break;
+
+        // Take the first available output port
+        int out_port = setlist.begin()->output_port;
+
+        // Check if this is ejection (destination reached)
+        if (out_port >= router->NumOutputs()) {
+            INFO("Reached destination at router %d\n", current_router_id);
+            break;
+        }
+
+        // Get the output channel from this router
+        const FlitChannel* output_channel = router->GetOutputChannel(out_port);
+        if (!output_channel) {
+            INFO("No output channel found at port %d of router %d\n", out_port, current_router_id);
+            break;
+        }
+
+        // Find next router
+        const Router* next_router = output_channel->GetSink();
+        int next_input_port = output_channel->GetSinkPort();
+
+        if (!next_router) {
+            INFO("No next router found from port %d of router %d\n", out_port, current_router_id);
+            break;
+        }
+
+        int next_router_id = next_router->GetID();
+        INFO("Router %d -> port %d -> router %d (buffer occupancy:%d)\n",
+             current_router_id, out_port, next_router_id, buffer_occupancy);
+
+        INFO("adding %d to path\n", current_router_id);
+        path.push_back(current_router_id);
+        // Get buffer occupancy at the current router for the next input
+        buffer_occupancy = router->GetBufferOccupancy(current_port);
+        path_occupancy.push_back(buffer_occupancy);
+
+        // Increment and update to next router/port
+        current_router_id = next_router_id;
+        current_port = next_input_port;
+        hop_count++;
+    }
+
+    return path_occupancy;
 }

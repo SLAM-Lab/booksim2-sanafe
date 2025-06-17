@@ -90,8 +90,6 @@ class IQRouter : public Router {
   vector<int> _vc_rr_offset;
   vector<int> _sw_rr_offset;
 
-  tRoutingFunction   _rf;
-
   int _output_buffer_size;
   vector<queue<Flit *> > _output_buffer;
 
@@ -157,7 +155,9 @@ public:
 	    int inputs, int outputs );
   
   virtual ~IQRouter( );
-  
+
+  tRoutingFunction   _rf;
+
   virtual void AddOutputChannel(FlitChannel * channel, CreditChannel * backchannel) override;
 
   virtual void ReadInputs( ) override;

@@ -15,14 +15,20 @@ struct SpikeEvent {
     std::pair<int, int> dest_hw;
     int hops{0};
     int spikes{0};
+    int buffered_along_path{0};
+    int max_buffered_along_path{0};
+    int buffered_squared{0};
+
     double generation_delay;
     double network_latency;
     double processing_delay;
     double blocking_latency;
+    double mean_processing_delay; // Globally across the network
 
     // For spike packets only
     // Timestamps
-    long long pending_cycle{-1LL};
+    long long tx_start_cycle{-1LL};
+    long long tx_ready_cycle{-1LL};
     long long injection_cycle{-1LL};
     // The vector stores all intermediate hop timestamps i.e., the cycle at
     //  which the message is forwarded to the next router. Using this, we can
