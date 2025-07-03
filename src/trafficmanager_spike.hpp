@@ -31,7 +31,7 @@ protected:
     std::vector<bool> _pe_tx_busy{};
     std::vector<long long int> _message_count{};
     std::vector<std::queue<int>> _received_flits{};
-    std::map<int, long long int> _rx_processing_cycles_left;
+    // std::map<int, long long int> _rx_processing_cycles_left;
     std::map<int, long long int> _tx_processing_cycles_left;
     std::map<int, long long int> _flit_processing_cycles;
     std::map<int, std::queue<SpikeEvent *>> pending_events;
@@ -69,7 +69,8 @@ private:
     bool _InjectionPossible(const int source, const int dest, const int subnet);
     int _GeneratePacket(int source, int stype, int c1, int time, int dest, int processing_cycles, int subnet, long int mid);
     vector<int> _GetRouteOccupancy(int src_router, int dest_router, int subnet);
-
+    vector<int> _GetRouteAndAdjacentOccupancy(int src_router, int dest_router, int subnet);
+    void _NocState(SpikeEvent &next_event, int subnet);
 };
 
 #endif

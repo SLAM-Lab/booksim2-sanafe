@@ -101,12 +101,34 @@ def feature_engineering(df):
                                             features_df['network_delay'] +
                                             features_df['processing_delay'])
 
+    features_df['buffer_processing_product'] = (features_df['mean_process_cycles'] *
+                                            features_df['buffered_path'])
+    features_df['dest_buffer_delay_product'] = (features_df['mean_process_dest_cycles'] *
+                                            features_df['buffered_dest'])
+
     # 5. Derived timing features
     feature_columns = [
-        'hops', 'spikes', 'spikes_log', 'generation_delay', 'processing_delay',
-        'buffered_path', 'mean_process_cycles', 'max_buffered', 'buffered_squared'
-        # 'src_hw', 'dest_hw',  'hops_squared', 'hops_log', 'spikes_per_hop'
-        # 'min_hop_delay',
+        'hops',
+        'spikes',
+        'generation_delay',
+        'processing_delay',
+        'buffered_path',
+        'mean_process_cycles',
+        #'max_buffered',
+        #'buffered_squared',
+        'var_process_cycles',
+        'sharing_along_flow',
+        'mean_process_flow_cycles',
+        'var_process_flow_cycles',
+        'mean_process_path_cycles',
+        'var_process_path_cycles',
+        'sharing_along_path',
+        'buffered_dest',
+        'mean_process_dest_cycles',
+        'full_dest_tile',
+        'subnet',
+        #'buffer_processing_product',
+        # 'dest_buffer_delay_product'
     ]
 
     return features_df[feature_columns + target_cols].dropna(), feature_columns
@@ -115,7 +137,7 @@ def feature_engineering(df):
 def train_ml_models(features_df, feature_columns, original_data):
     """Train ML models to understand error patterns"""
     print("=== MACHINE LEARNING ANALYSIS ===\n")
-    target_cols = ['network_delay_error',]
+    target_cols = ['network_delay_cycle',]
 
     X = features_df[feature_columns]
 
@@ -129,16 +151,23 @@ def train_ml_models(features_df, feature_columns, original_data):
                                                             random_state=42)
 
         # Scale features
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_test_scaled = scaler.transform(X_test)
+        feature_scaler = StandardScaler()
+        X_train_scaled = feature_scaler.fit_transform(X_train)
+        X_test_scaled = feature_scaler.transform(X_test)
+
+        target_scaler = StandardScaler()
+        y_train_scaled = target_scaler.fit_transform(y_train.values.reshape(-1, 1))
 
         # Train Random Forest
         rf = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-        rf.fit(X_train_scaled, y_train)
+        rf.fit(X_train_scaled, y_train_scaled)
 
         # Predictions
-        y_pred = rf.predict(X_test_scaled)
+        y_pred_scaled = rf.predict(X_test_scaled)
+        y_pred = target_scaler.inverse_transform(y_pred_scaled.reshape(-1, 1)).flatten()
+        print(y_pred.min())
+        print(y_pred.max())
+        input()
 
         # Metrics
         r2 = r2_score(y_test, y_pred)
@@ -158,7 +187,8 @@ def train_ml_models(features_df, feature_columns, original_data):
 
         results[target] = {
             'model': rf,
-            'scaler': scaler,
+            'feature_scaler': feature_scaler,
+            'target_scaler': target_scaler,
             'feature_importance': feature_importance,
             'r2': r2,
             'rmse': rmse
@@ -175,14 +205,20 @@ def train_ml_models(features_df, feature_columns, original_data):
         plt.tight_layout()
         plt.savefig("figures/ml_features.pdf")
 
+        # Scale all features and predict so we can compare predictor against
+        #  timeseries etc
+        X_all_scaled = feature_scaler.transform(X)
+        y_pred_all_scaled = rf.predict(X_all_scaled)
+        y_pred_all = target_scaler.inverse_transform(y_pred_all_scaled.reshape(-1, 1)).flatten()
+        original_data['ml_predicted'] = y_pred_all
+
     return results
 
-
+from sklearn.neural_network import MLPRegressor
 def compare_ml_vs_sana_fe(features_df, feature_columns, original_df):
         """Compare ML approach vs SANA-FE for predicting cycle-accurate delays"""
         print("=== ML vs SANA-FE COMPARISON ===\n")
 
-        print(features_df)
         X = features_df[feature_columns]
         # Target: Actual cycle-accurate delays (converted to seconds)
         y_network = original_df['network_delay_cycle']  # Ground truth from detailed simulator
@@ -194,17 +230,47 @@ def compare_ml_vs_sana_fe(features_df, feature_columns, original_df):
 
             # Split data
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            feature_scaler = StandardScaler()
+            X_train_scaled = feature_scaler.fit_transform(X_train)
+            X_test_scaled = feature_scaler.transform(X_test)
 
-            # Scale features for ML
-            scaler = StandardScaler()
-            X_train_scaled = scaler.fit_transform(X_train)
-            X_test_scaled = scaler.transform(X_test)
+            target_scaler = StandardScaler()
+            y_train_scaled = target_scaler.fit_transform(y_train.values.reshape(-1, 1))
+
+            # # Scale features for ML
+            # feature_scaler = StandardScaler()
+            # X_train_scaled = feature_scaler.fit_transform(X_train)
+            # X_test_scaled = feature_scaler.transform(X_test)
+
+            # target_scaler = StandardScaler()
+            # y_train_scaled = target_scaler.fit_transform(y_train.values.reshape(-1, 1))
+            # y_test_scaled = target_scaler.transform(y_test.values.reshape(-1, 1))
+
+            # Configure MLP
+            # rf = MLPRegressor(
+            #     hidden_layer_sizes=(128, 64, 32),  # 3 hidden layers
+            #     activation='relu',                  # ReLU activation
+            #     solver='adam',                     # Adam optimizer
+            #     alpha=0.001,                       # L2 regularization
+            #     learning_rate_init=0.001,          # Learning rate
+            #     max_iter=500,                      # Max epochs
+            #     early_stopping=True,               # Stop when validation doesn't improve
+            #     validation_fraction=0.1,           # Use 10% of training for validation
+            #     n_iter_no_change=20,               # Patience for early stopping
+            #     random_state=42
+            # )
 
             # Train ML model
             rf = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
             #rf = LinearRegression()
-            rf.fit(X_train_scaled, y_train)
-            ml_pred = rf.predict(X_test_scaled)
+
+            rf.fit(X_train_scaled, y_train_scaled)
+            ml_pred_scaled = rf.predict(X_test_scaled)
+            ml_pred = target_scaler.inverse_transform(ml_pred_scaled.reshape(-1, 1)).flatten()
+
+            print(ml_pred.min())
+            print(ml_pred.max())
+            input()
 
             # Get SANA-FE predictions for same test set
             test_indices = X_test.index
@@ -216,9 +282,12 @@ def compare_ml_vs_sana_fe(features_df, feature_columns, original_df):
             # Calculate metrics for both
             ml_r2 = r2_score(y_test, ml_pred)
             ml_rmse = np.sqrt(mean_squared_error(y_test, ml_pred))
+            ml_mae = np.mean(np.abs((y_test - ml_pred)))
 
             sana_r2 = r2_score(y_test, sana_pred)
             sana_rmse = np.sqrt(mean_squared_error(y_test, sana_pred))
+            sana_mae = np.mean(np.abs((y_test - sana_pred)))
+
 
             # Calculate percentage improvements
             r2_improvement = ((ml_r2 - sana_r2) / abs(sana_r2)) * 100 if sana_r2 != 0 else float('inf')
@@ -226,11 +295,13 @@ def compare_ml_vs_sana_fe(features_df, feature_columns, original_df):
 
             print(f"**ML Model Performance:**")
             print(f"  R² Score: {ml_r2:.4f}")
-            print(f"  RMSE: {ml_rmse:.6f}")
+            print(f"  RMSE: {ml_rmse:.6e}")
+            print(f"  MAE: {ml_mae:.6e}")
 
             print(f"**SANA-FE Performance:**")
             print(f"  R² Score: {sana_r2:.4f}")
-            print(f"  RMSE: {sana_rmse:.6f}")
+            print(f"  RMSE: {sana_rmse:.6e}")
+            print(f"  MAE: {sana_mae:.6e}")
 
             print(f"**Improvement:**")
             print(f"  R² improvement: {r2_improvement:+.1f}%")
@@ -242,7 +313,9 @@ def compare_ml_vs_sana_fe(features_df, feature_columns, original_df):
                 'sana_r2': sana_r2, 'sana_rmse': sana_rmse,
                 'r2_improvement': r2_improvement,
                 'rmse_improvement': rmse_improvement,
-                'model': rf, 'scaler': scaler
+                'model': rf,
+                'target_scaler': target_scaler,
+                'feature_scaler': feature_scaler
             }
 
             # Create comparison plot - both models on same plot
@@ -250,8 +323,8 @@ def compare_ml_vs_sana_fe(features_df, feature_columns, original_df):
 
             # Subplot 1: Both models together
             plt.subplot(1, 2, 1)
-            plt.scatter(ml_pred, y_test, alpha=0.6, label=f'ML (R² = {ml_r2:.3f})', color='blue', s=30)
-            plt.scatter(sana_pred, y_test, alpha=0.6, label=f'SANA-FE (R² = {sana_r2:.3f})', color='orange', s=30)
+            plt.scatter(ml_pred, y_test, alpha=0.4, label=f'ML (R² = {ml_r2:.3f})', color='blue', s=30)
+            #plt.scatter(sana_pred, y_test, alpha=0.4, label=f'SANA-FE (R² = {sana_r2:.3f})', color='orange', s=30)
 
             # Perfect prediction line (y=x)
             all_values = np.concatenate([y_test, ml_pred, sana_pred])
@@ -399,10 +472,6 @@ if __name__ == "__main__":
     # Analyze differences
     analyze_differences(merged_data)
 
-    # Save the merged dataframe
-    merged_data.to_csv("merged_messages.csv", index=False)
-    print("\nMerged data saved to 'merged_messages.csv'")
-
     # Optional: Display columns for reference
     print("\n=== Column Information ===")
     print("Original columns:", list(merged_data.columns[:15]))  # First 15 columns
@@ -412,3 +481,7 @@ if __name__ == "__main__":
     features_df, feature_cols = feature_engineering(merged_data)
     train_ml_models(features_df, feature_cols, merged_data)
     compare_ml_vs_sana_fe(features_df, feature_cols, merged_data)
+
+    # Save the merged dataframe with predictions
+    merged_data.to_csv("merged_messages.csv", index=False)
+    print("\nMerged data saved to 'merged_messages.csv'")

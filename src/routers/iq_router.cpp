@@ -1412,11 +1412,12 @@ void IQRouter::_SWAllocEvaluate( )
         // TODO: calculate the nodes this router position is associated with
         int core_id = (_id*gC) + dest_output;  // Convert output port to core ID
         INFO("id:%d gC:%d dest_output:%d core_id:%d\n", _id, gC, dest_output, core_id);
-          //send_blocked |= (gReceiverBusyCycles[core_id] > 0);
-          send_blocked |= (gReceiverBuffers[core_id].size() >= (size_t) _vc_buf_size);
+        //send_blocked |= (gReceiverBusyCycles[core_id] > 0);
+        send_blocked |= (gReceiverBuffers[core_id].size() >= (size_t) _vc_buf_size);
+        INFO("fid:%d core_id:%d gReceiverBuffers size:%zu _vc_buf_size:%d blocked:%d\n",
+              f->pid, core_id, gReceiverBuffers[core_id].size(), _vc_buf_size, send_blocked);
       }
       if(send_blocked) {
-
         INFO("Router:%d fid:%d VC:%d at output:%d is full/busy\n", GetID(), f->pid, dest_vc, dest_output);
         if(f->watch) {
           *gWatchOut << GetSimTime() << " | " << FullName() << " | "
@@ -1854,27 +1855,51 @@ void IQRouter::_SWAllocEvaluate( )
 	  }
 
 	}
-
       } else {
-	assert(cur_buf->GetOutputPort(vc) == output);
-	
-	int const match_vc = cur_buf->GetOutputVC(vc);
-	assert((match_vc >= 0) && (match_vc < _vcs));
+        assert(cur_buf->GetOutputPort(vc) == output);
+  
+        int const match_vc = cur_buf->GetOutputVC(vc);
+        assert((match_vc >= 0) && (match_vc < _vcs));
 
-	if(dest_buf->IsFullFor(match_vc)) {
-	  INFO("Discarding grant from input %d due to lack of credit\n", input);
-    if(f->watch) {
-	    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-		       << "  Discarding grant from input " << input
-		       << "." << (vc % _input_speedup)
-		       << " to output " << output
-		       << "." << (expanded_output % _output_speedup)
-		       << " due to lack of credit." << endl;
-	  }
-	  iter->second.second = dest_buf->IsFull() ? STALL_BUFFER_FULL : STALL_BUFFER_RESERVED;
-	}
+        if(dest_buf->IsFullFor(match_vc)) {
+          INFO("Discarding grant from input %d due to lack of credit\n", input);
+          if(f->watch) {
+            *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                << "  Discarding grant from input " << input
+                << "." << (vc % _input_speedup)
+                << " to output " << output
+                << "." << (expanded_output % _output_speedup)
+                << " due to lack of credit." << endl;
+          }
+          iter->second.second = dest_buf->IsFull() ? STALL_BUFFER_FULL : STALL_BUFFER_RESERVED;
+        }
       }
     }
+    // TODO: should go somewhere here or so on, but this is complicated..
+    // // Add to the buffer now, even though this may take another cycle or so
+    // //  to actually make it across. This is so the buffer is held and doesn't
+    // //  get allocated to anyone else e.g., if its now allocated and full
+    // int const vc = iter->second.first.second;
+    // int const dest_output = iset->output_port;
+    // if ((iter->second.second >= 0) && (dest_output < gC)) {
+    //   int core_id = (_id*gC) + dest_output;
+    //   if (gReceiverBusyCycles[core_id] > 0) {
+    //     INFO("push fid:%d core_id:%d gReceiverBuffer:%zu\n", f->pid, core_id,
+    //         gReceiverBuffers[core_id].size());
+    //     gReceiverBuffers[core_id].push_back({f->id, f->processing_cycles});
+    //     assert(gReceiverBuffers[core_id].size() <= 8);
+    //     INFO("fid:%d core:%d busy receiving, pushing into buffer (size:%zu)\n",
+    //       f->id, core_id, gReceiverBuffers[core_id].size());
+    //   } else {
+    //     gReceiverBusyCycles[core_id] = f->processing_cycles;
+    //     INFO("fid:%d core:%d setting rx busy for %d cycles\n",
+    //         f->pid, core_id, gReceiverBusyCycles[core_id]);
+    //   }
+    //   INFO("fid:%d sid:%ld src:%d dst:%d\n", f->pid, f->mid, f->src, f->dest);
+    //   assert(f->mid >= 0);
+    //   SpikeEvent &spike = _spike_stats.at(f->mid);
+    //   spike.ejection_cycle = _time + 1; // 1 cycle delay typically
+    // }
   }
 }
 
@@ -2245,10 +2270,23 @@ void IQRouter::_SwitchUpdate( )
     }
     INFO("flit fid:%d at router:%d finished crossbar traversal\n",
         f->pid, GetID());
+
+    // jboyle TODO HACK: there is a chance that multiple flits get
+    //  allocated to the same buffer entry, causing an over by one error
+    //  (probably both subnets allocate simultaneously or something like this).
+    //  It seems to happen maybe in 50% of cases, so it isn't rare, but the off
+    //  by one should cause a minor overall difference. The fix will be that
+    //  we should allocate the buffer when we allocate the switch, earlier,
+    //  so that the second subnet is correctly blocked (maybe this points to
+    //  a bigger bug in Booksim). Leave this for later...
     if (output < gC) {
       int core_id = (_id*gC) + output;
       if (gReceiverBusyCycles[core_id] > 0) {
+        INFO("push fid:%d core_id:%d gReceiverBuffer:%zu\n", f->pid, core_id,
+            gReceiverBuffers[core_id].size());
         gReceiverBuffers[core_id].push_back({f->id, f->processing_cycles});
+        // This assertion sometimes fails. TODO: fix so this holds
+        //assert(gReceiverBuffers[core_id].size() <= 8);
         INFO("fid:%d core:%d busy receiving, pushing into buffer (size:%zu)\n",
           f->id, core_id, gReceiverBuffers[core_id].size());
       } else {
@@ -2367,6 +2405,7 @@ int IQRouter::GetUsedCredit(int o) const
 
 int IQRouter::GetBufferOccupancy(int i) const {
   assert(i >= 0 && i < _inputs);
+
   return _buf[i]->GetOccupancy();
 }
 

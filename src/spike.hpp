@@ -10,6 +10,7 @@ struct SpikeEvent {
     Type event_type;
     long int mid;
     int timestep;
+    int subnet;
     std::pair<std::string, int> src_neuron;
     std::pair<int, int> src_hw;
     std::pair<int, int> dest_hw;
@@ -24,6 +25,22 @@ struct SpikeEvent {
     double processing_delay;
     double blocking_latency;
     double mean_processing_delay; // Globally across the network
+    double var_processing_delay; // Globally across the network
+
+    int buffered_dest{0};
+    int full_dest_tile{0};
+    double mean_processing_dest;
+    double var_processing_dest;
+
+    double mean_processing_flow; // For all in flight messages sharing the flow
+    double var_processing_flow; // For all in flight messages sharing the flow
+    double mean_processing_path; // For all in flight messages sharing any link in the path
+    double var_processing_path; // For all in flight messages sharing any link in the path
+
+    int sharing_along_flow{0}; // Total messages sharing the flow/entire path
+    int sharing_along_path{0}; // Total messages sharing any link in the path
+    int max_sharing_along_path{0}; // Maximum messages sharing any given link in the path
+    int sharing_path_squared{0}; // Squared messages sharing a link, per-link
 
     // For spike packets only
     // Timestamps
