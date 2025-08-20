@@ -60,7 +60,7 @@ extern std::ostream * gWatchOut;
 
 // jboyle: Added to track receiving cores
 extern std::vector<int> gReceiverBusyCycles;
-extern std::vector<std::deque<std::pair<int, int>>> gReceiverBuffers;
+extern std::vector<std::deque<std::tuple<int, int, int>>> gReceiverBuffers;
 
 // jboyle: Added to track all spikes
 extern std::map<long int, SpikeEvent> _spike_stats;

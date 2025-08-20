@@ -2272,7 +2272,7 @@ void IQRouter::_SwitchUpdate( )
         f->pid, GetID());
 
     // jboyle TODO HACK: there is a chance that multiple flits get
-    //  allocated to the same buffer entry, causing an over by one error
+    //  allocated to the same rx buffer entry, causing an over by one error
     //  (probably both subnets allocate simultaneously or something like this).
     //  It seems to happen maybe in 50% of cases, so it isn't rare, but the off
     //  by one should cause a minor overall difference. The fix will be that
@@ -2284,17 +2284,24 @@ void IQRouter::_SwitchUpdate( )
       if (gReceiverBusyCycles[core_id] > 0) {
         INFO("push fid:%d core_id:%d gReceiverBuffer:%zu\n", f->pid, core_id,
             gReceiverBuffers[core_id].size());
-        gReceiverBuffers[core_id].push_back({f->id, f->processing_cycles});
+        // Core rx buffer is busy, and this buffer will be counted as network
+        gReceiverBuffers[core_id].push_back({f->id, f->mid, f->processing_cycles});
         // This assertion sometimes fails. TODO: fix so this holds
         //assert(gReceiverBuffers[core_id].size() <= 8);
         INFO("fid:%d core:%d busy receiving, pushing into buffer (size:%zu)\n",
           f->id, core_id, gReceiverBuffers[core_id].size());
       } else {
+        // Processing starts immediately
         gReceiverBusyCycles[core_id] = f->processing_cycles;
-        INFO("fid:%d core:%d setting rx busy for %d cycles\n",
-            f->pid, core_id, gReceiverBusyCycles[core_id]);
+        INFO("fid:%d mid:%ld core:%d setting rx busy for %d cycles\n",
+            f->pid, f->mid, core_id, gReceiverBusyCycles[core_id]);
+
+        assert(f->mid >= 0);
+        SpikeEvent &spike = _spike_stats.at(f->mid);
+        spike.processing_cycle = _time;
       }
       INFO("fid:%d sid:%ld src:%d dst:%d\n", f->pid, f->mid, f->src, f->dest);
+      // Record the ejection cycle as the time the packet left the network
       assert(f->mid >= 0);
       SpikeEvent &spike = _spike_stats.at(f->mid);
       spike.ejection_cycle = _time;
@@ -2406,6 +2413,12 @@ int IQRouter::GetUsedCredit(int o) const
 int IQRouter::GetBufferOccupancy(int i) const {
   assert(i >= 0 && i < _inputs);
 
+  INFO("Router:%d port:%i occupancy:%d\n", _id, i, _buf[i]->GetOccupancy());
+  // for (int n = 0; n < _buf[i]->GetOccupancy(); n++) {
+  //     auto b = _buf[i];
+  //     auto vc = b->FrontFlit(0); // Need to access flits in buffer
+  //     INFO("fid:%ld\n", vc->mid); // HACK assume 1 channel
+  // }
   return _buf[i]->GetOccupancy();
 }
 

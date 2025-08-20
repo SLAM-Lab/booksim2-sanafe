@@ -203,7 +203,7 @@ void TrafficManagerSpike::_NocState(SpikeEvent &next_event, const int subnet) {
         int src_core = (next_event.src_hw.first * CORES_PER_TILE) +
             next_event.src_hw.second;
         int dest_core = (next_event.dest_hw.first * CORES_PER_TILE) +
-            next_event.src_hw.second;
+            next_event.dest_hw.second;
         INFO("src core:%d, dst core:%d\n", src_core, dest_core);
 
         vector<int> path = _GetRouteOccupancy(src_core, dest_core, subnet);
@@ -254,10 +254,11 @@ void TrafficManagerSpike::_NocState(SpikeEvent &next_event, const int subnet) {
 
         // **** AT DESTINATION NODE ****
         next_event.buffered_dest = (int) gReceiverBuffers[dest_core].size();
+        INFO("buffered at dest core %d: %zu\n", dest_core, gReceiverBuffers[dest_core].size());
         auto flits = gReceiverBuffers[dest_core];
         while (!flits.empty()) {
             auto &f = flits.front();
-            next_event.mean_processing_dest += f.second;
+            next_event.mean_processing_dest += std::get<2>(f);
             flits.pop_front();
         }
         next_event.mean_processing_dest = (next_event.buffered_dest) > 0 ?
@@ -280,6 +281,7 @@ void TrafficManagerSpike::_NocState(SpikeEvent &next_event, const int subnet) {
                     next_event.src_hw.second;
                 const int dst_node = (next_event.dest_hw.first * CORES_PER_TILE) +
                     next_event.dest_hw.second;
+
                 // If the flit shares the same flow as the spike
                 if (flit.second->src == src_node &&
                     flit.second->dest == dst_node &&
@@ -287,6 +289,20 @@ void TrafficManagerSpike::_NocState(SpikeEvent &next_event, const int subnet) {
                     ++next_event.sharing_along_flow;
                     total_flow_cycles += flit.second->processing_cycles;
                 }
+
+                // Try a more relaxed metric for total messages in flow,
+                //  considering tile->tile matches rather than exact node->node
+                //  matches
+                // const int next_src_tile = next_event.src_hw.first;
+                // const int next_dst_tile = next_event.dest_hw.first;
+                // const int src_tile = flit.second->src / CORES_PER_TILE;
+                // const int dst_tile = flit.second->dest / CORES_PER_TILE;
+                // if (src_tile == next_src_tile &&
+                //     dst_tile == next_dst_tile &&
+                //     flit.second->subnetwork == subnet) {
+                //     ++next_event.sharing_along_flow;
+                //     total_flow_cycles += flit.second->processing_cycles;
+                // }
             }
         }
         next_event.mean_processing_flow = (next_event.sharing_along_flow > 0) ?
@@ -325,7 +341,6 @@ void TrafficManagerSpike::_NocState(SpikeEvent &next_event, const int subnet) {
         for(auto &flits : _total_in_flight_flits) {
             for (auto &flit : flits) {
                 // Extract coordinates for the in-flight flit
-                // Assuming CORES_PER_TILE = 4 based on your existing code
                 int flit_src_tile = flit.second->src / CORES_PER_TILE;
                 int flit_dst_tile = flit.second->dest / CORES_PER_TILE;
                 int flit_src_x = flit_src_tile / 4; // HACK TODO generalize to whatever dimensions
@@ -1095,16 +1110,21 @@ void TrafficManagerSpike::_Step()
           --gReceiverBusyCycles[i];
         }
         if ((gReceiverBusyCycles[i] == 0) && !gReceiverBuffers[i].empty()) {
-          auto id_cycles_pair = gReceiverBuffers[i].front();
-          [[maybe_unused]] int flit_id = id_cycles_pair.first;
-          int flit_processing_cycles = id_cycles_pair.second;
+          auto id_mid_cycles_tuple = gReceiverBuffers[i].front();
+          [[maybe_unused]] int mid = get<1>(id_mid_cycles_tuple);
+          int flit_processing_cycles = get<2>(id_mid_cycles_tuple);
           gReceiverBusyCycles[i] = flit_processing_cycles;
           gReceiverBuffers[i].pop_front();
-          INFO("fid:%d core:%d Rx finished get flit and set %d processing cycles "
+          INFO("mid:%d core:%d Rx finished get flit and set %d processing cycles "
               "(new buffer size:%zu)\n",
-              flit_id, i, flit_processing_cycles, gReceiverBuffers[i].size());
-          assert(flit_id >= 0);
+              mid, i, flit_processing_cycles, gReceiverBuffers[i].size());
+          assert(mid >= 0);
           assert(flit_processing_cycles >= 0);
+
+          // Record the ejection cycle as the time the message left the network
+          assert(mid >= 0);
+          SpikeEvent &spike = _spike_stats.at(mid);
+          spike.processing_cycle = _time;
         }
       }
 
@@ -1488,7 +1508,7 @@ bool TrafficManagerSpike::Run( )
 
     // jboyle: Print all the spike message info
     ofstream message_trace("messages_cycle_accurate.csv");
-    message_trace << "mid,subnet,tx_start_cycle,tx_ready_cycle,injection_cycle,ejection_cycle,";
+    message_trace << "mid,subnet,tx_start_cycle,tx_ready_cycle,injection_cycle,ejection_cycle,processing_cycle,";
     message_trace << "blocked_cycles,network_cycles,buffered_path,buffered_and_adjacent_path,mean_process_cycles,";
     message_trace << "var_process_cycles,max_buffered,buffered_squared,mean_process_flow_cycles,";
     message_trace << "var_process_flow_cycles,mean_process_path_cycles,var_process_path_cycles,";
@@ -1505,7 +1525,7 @@ bool TrafficManagerSpike::Run( )
             event.injection_cycle = event.hop_cycles[0];
             assert(event.injection_cycle >= event.tx_ready_cycle);
             event.blocked_cycles = event.injection_cycle - event.tx_ready_cycle;
-            event.network_cycles = event.ejection_cycle - event.injection_cycle;
+            event.network_cycles = event.processing_cycle - event.injection_cycle;
 
             // Print the breakdown of delays, I'm not sure the best way of
             //  saving this to csv yet
@@ -1519,6 +1539,7 @@ bool TrafficManagerSpike::Run( )
             assert(event.tx_ready_cycle >= 0);
             assert(event.injection_cycle >= 0);
             assert(event.ejection_cycle >= 0);
+            assert(event.processing_cycle >= 0);
 
             INFO("event %ld blocked:%lld network:%lld hops:%zu\n", event.mid,
                     event.blocked_cycles, event.network_cycles,
@@ -1529,6 +1550,7 @@ bool TrafficManagerSpike::Run( )
             message_trace << event.tx_ready_cycle << ',';
             message_trace << event.injection_cycle << ',';
             message_trace << event.ejection_cycle << ',';
+            message_trace << event.processing_cycle << ',';
             message_trace << event.blocked_cycles << ',';
             message_trace << event.network_cycles << ',';
             // Two additional metrics to compare against SANA-FE's internal

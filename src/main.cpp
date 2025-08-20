@@ -95,7 +95,7 @@ ostream * gWatchOut;
 
 
 vector<int> gReceiverBusyCycles{};
-vector<deque<pair<int, int>>> gReceiverBuffers{};
+vector<deque<tuple<int, int, int>>> gReceiverBuffers{};
 
 std::map<long int, SpikeEvent> _spike_stats{};
 std::list<SpikeEvent> _placeholder_spikes{};
@@ -121,7 +121,7 @@ bool Simulate( BookSimConfig const & config )
   }
 
   gReceiverBusyCycles.resize(gNodes, 0);
-  gReceiverBuffers.resize(gNodes, deque<pair<int, int>>());
+  gReceiverBuffers.resize(gNodes, deque<tuple<int, int, int>>());
 
   /*tcc and characterize are legacy
    *not sure how to use them 

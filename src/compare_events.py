@@ -108,27 +108,17 @@ def feature_engineering(df):
 
     # 5. Derived timing features
     feature_columns = [
-        'hops',
-        'spikes',
-        'generation_delay',
-        'processing_delay',
-        'buffered_path',
-        'mean_process_cycles',
-        #'max_buffered',
-        #'buffered_squared',
-        'var_process_cycles',
-        'sharing_along_flow',
-        'mean_process_flow_cycles',
-        'var_process_flow_cycles',
-        'mean_process_path_cycles',
-        'var_process_path_cycles',
-        'sharing_along_path',
+        #'buffered_path',
         'buffered_dest',
-        'mean_process_dest_cycles',
-        'full_dest_tile',
-        'subnet',
-        #'buffer_processing_product',
-        # 'dest_buffer_delay_product'
+        #'buffered_and_adjacent_path',
+        'mean_process_cycles',
+        'var_process_cycles',
+        'sharing_along_path',
+        'messages_along_route',
+        ##'mean_process_path_cycles',
+        ##'mean_process_flow_cycles',
+        ##'mean_process_dest_cycles',
+        'hops',
     ]
 
     return features_df[feature_columns + target_cols].dropna(), feature_columns
@@ -167,7 +157,6 @@ def train_ml_models(features_df, feature_columns, original_data):
         y_pred = target_scaler.inverse_transform(y_pred_scaled.reshape(-1, 1)).flatten()
         print(y_pred.min())
         print(y_pred.max())
-        input()
 
         # Metrics
         r2 = r2_score(y_test, y_pred)
@@ -270,7 +259,6 @@ def compare_ml_vs_sana_fe(features_df, feature_columns, original_df):
 
             print(ml_pred.min())
             print(ml_pred.max())
-            input()
 
             # Get SANA-FE predictions for same test set
             test_indices = X_test.index
@@ -324,7 +312,7 @@ def compare_ml_vs_sana_fe(features_df, feature_columns, original_df):
             # Subplot 1: Both models together
             plt.subplot(1, 2, 1)
             plt.scatter(ml_pred, y_test, alpha=0.4, label=f'ML (R² = {ml_r2:.3f})', color='blue', s=30)
-            #plt.scatter(sana_pred, y_test, alpha=0.4, label=f'SANA-FE (R² = {sana_r2:.3f})', color='orange', s=30)
+            plt.scatter(sana_pred, y_test, alpha=0.4, label=f'SANA-FE (R² = {sana_r2:.3f})', color='orange', s=30)
 
             # Perfect prediction line (y=x)
             all_values = np.concatenate([y_test, ml_pred, sana_pred])
@@ -393,6 +381,9 @@ def merge_message_dataframes(messages_csv, detailed_csv, cycle_period=1.0e-9):
                                           merged_df['network_delay'].replace(0, float('nan'))) * 100
     merged_df['blocking_delay_pct_error'] = (merged_df['blocking_delay_error'] /
                                            merged_df['blocking_delay'].replace(0, float('nan'))) * 100
+
+    merged_df['total_buffered'] = merged_df['buffered_and_adjacent_path'] + merged_df['buffered_dest']
+    merged_df['buffered_process_delay_product'] = merged_df['total_buffered'] * merged_df['mean_process_cycles']
 
     return merged_df
 

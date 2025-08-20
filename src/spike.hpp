@@ -19,6 +19,7 @@ struct SpikeEvent {
     int buffered_along_path{0};
     int max_buffered_along_path{0};
     int buffered_squared{0};
+    int buffered_and_adjacent_along_path{0};
 
     double generation_delay;
     double network_latency;
@@ -52,6 +53,8 @@ struct SpikeEvent {
     //  figure out when the message is getting stuck
     std::vector<long long> hop_cycles;
     long long ejection_cycle{-1LL};
+    long long processing_cycle{-1LL};
+    long long processing_finished_cycle{-1LL};
 
     // Delays
     long long blocked_cycles{0LL};
