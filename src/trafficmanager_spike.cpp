@@ -1530,10 +1530,10 @@ bool TrafficManagerSpike::Run( )
             // Print the breakdown of delays, I'm not sure the best way of
             //  saving this to csv yet
             INFO("hop delays (mid:%ld) ", event.mid);
-            for(const auto cycles : event.hop_cycles) {
-                printf("%lld ", cycles);
-            }
-            printf("\n");
+            // for(const auto cycles : event.hop_cycles) {
+            //     printf("%lld ", cycles);
+            // }
+            // printf("\n");
 
             assert(event.tx_start_cycle >= 0);
             assert(event.tx_ready_cycle >= 0);
