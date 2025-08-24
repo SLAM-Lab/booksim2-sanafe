@@ -152,7 +152,7 @@ bool BatchTrafficManager::_SingleSim( )
       ++empty_steps;
       
       if ( empty_steps % 1000 == 0 ) {
-	_DisplayRemaining( ); 
+	//_DisplayRemaining( ); 
 	cout << ".";
       }
       

@@ -1596,7 +1596,7 @@ bool TrafficManager::_SingleSim( )
                         break;
                     }
 	  
-                    _DisplayRemaining( ); 
+                    //_DisplayRemaining( ); 
 	  
                 }
             }
@@ -1662,9 +1662,9 @@ bool TrafficManager::Run( )
 
             ++empty_steps;
 
-            if ( empty_steps % 1000 == 0 ) {
-                _DisplayRemaining( ); 
-            }
+            // if ( empty_steps % 1000 == 0 ) {
+            //     _DisplayRemaining( ); 
+            // }
       
             packets_left = false;
             for(int c = 0; c < _classes; ++c) {
