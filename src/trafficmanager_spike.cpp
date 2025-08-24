@@ -255,7 +255,7 @@ void TrafficManagerSpike::_NocState(SpikeEvent &next_event, const int subnet) {
         // **** AT DESTINATION NODE ****
         next_event.buffered_dest = (int) gReceiverBuffers[dest_core].size();
         INFO("buffered at dest core %d: %zu\n", dest_core, gReceiverBuffers[dest_core].size());
-        auto flits = gReceiverBuffers[dest_core];
+        auto flits = gReceiverBuffers[dest_core]; // Make temporary copy
         while (!flits.empty()) {
             auto &f = flits.front();
             next_event.mean_processing_dest += std::get<2>(f);
