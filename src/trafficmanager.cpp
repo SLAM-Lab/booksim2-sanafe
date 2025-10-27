@@ -1551,7 +1551,7 @@ bool TrafficManager::_SingleSim( )
 
         if ( _measure_latency ) {
             cout << "Draining all recorded packets ..." << endl;
-            int empty_steps = 0;
+            [[maybe_unused]] int empty_steps = 0;
             while( _PacketsOutstanding( ) ) { 
                 _Step( ); 
 	
@@ -1650,7 +1650,7 @@ bool TrafficManager::Run( )
         // Empty any remaining packets
         cout << "Draining remaining packets ..." << endl;
         _empty_network = true;
-        int empty_steps = 0;
+        [[maybe_unused]] int empty_steps = 0;
 
         bool packets_left = false;
         for(int c = 0; c < _classes; ++c) {
