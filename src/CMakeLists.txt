@@ -1,24 +1,43 @@
-find_package(BISON REQUIRED)
-find_package(FLEX REQUIRED)
+cmake_minimum_required(VERSION 3.13)
 
 set(LEX_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)
 set(YACC_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/y.tab.c)
 set(YACC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/y.tab.h)
 
-option(BOOKSIM_INSTALL TRUE)
-
 set(PARSER_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
-# Generate parser files with BISON
-BISON_TARGET(ConfigParser
-             ${CMAKE_CURRENT_SOURCE_DIR}/config.y
-             ${YACC_OUTPUT}
-             DEFINES_FILE ${YACC_HEADER})
 
-# Generate lexer files with FLEX
-FLEX_TARGET(ConfigScanner
-            ${CMAKE_CURRENT_SOURCE_DIR}/config.l
-            ${LEX_OUTPUT})
-ADD_FLEX_BISON_DEPENDENCY(ConfigScanner ConfigParser)
+if(BOOKSIM_GENERATE_PARSER)
+    message("Generating parser using bison and flex")
+    find_package(BISON REQUIRED)
+    find_package(FLEX REQUIRED)
+
+    # Generate parser files with BISON
+    BISON_TARGET(ConfigParser
+                ${CMAKE_CURRENT_SOURCE_DIR}/config.y
+                ${YACC_OUTPUT}
+                DEFINES_FILE ${YACC_HEADER})
+    # Generate lexer files with FLEX
+    FLEX_TARGET(ConfigScanner
+                ${CMAKE_CURRENT_SOURCE_DIR}/config.l
+                ${LEX_OUTPUT})
+    ADD_FLEX_BISON_DEPENDENCY(ConfigScanner ConfigParser)
+else()
+    message(STATUS "Using pre-generated parser files from repository")
+    # Point to the pre-generated files in your repository
+    # Adjust these paths to match where you store the pre-generated files
+    set(BISON_ConfigParser_OUTPUTS
+        ${CMAKE_CURRENT_SOURCE_DIR}/y.tab.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/y.tab.h
+    )
+    set(FLEX_ConfigScanner_OUTPUTS
+        ${CMAKE_CURRENT_SOURCE_DIR}/lex.yy.c
+    )
+
+    # Also set these for consistency (in case they're used elsewhere)
+    set(YACC_OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/y.tab.c)
+    set(YACC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/y.tab.h)
+    set(LEX_OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/lex.yy.c)
+endif()
 
 # Define source directories and include paths
 set(BOOKSIM_INCLUDE_DIRS

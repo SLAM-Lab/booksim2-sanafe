@@ -15,5 +15,9 @@ add_compile_options(
     -Wall -pedantic -Werror
 )
 
+# Define options BEFORE adding subdirectory
+option(BOOKSIM_GENERATE_PARSER "Generate parser using bison and flex" ON)
+option(BOOKSIM_INSTALL "Install booksim targets and headers" ON)
+
 add_subdirectory(src)
 export(TARGETS booksim NAMESPACE booksim:: FILE booksimTargets.cmake)

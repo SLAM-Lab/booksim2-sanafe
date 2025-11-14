@@ -1,7 +1,4 @@
 booksim
-lex.yy.c
-y.tab.c
-y.tab.h
 *.o
 *.d
 libbooksim.a
@@ -10,6 +7,3 @@ CMakeCache.txt
 CMakeFiles
 Makefile
 cmake_install.cmake
-config.lex.c
-config.tab.c
-config.tab.h
