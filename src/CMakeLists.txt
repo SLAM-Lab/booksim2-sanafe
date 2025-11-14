@@ -5,6 +5,8 @@ set(LEX_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)
 set(YACC_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/y.tab.c)
 set(YACC_HEADER ${CMAKE_CURRENT_BINARY_DIR}/y.tab.h)
 
+option(BOOKSIM_INSTALL TRUE)
+
 set(PARSER_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 # Generate parser files with BISON
 BISON_TARGET(ConfigParser
@@ -87,19 +89,21 @@ target_include_directories(booksim PUBLIC ${BOOKSIM_INCLUDE_DIRS})
 set_target_properties(booksim_exe PROPERTIES OUTPUT_NAME booksim)
 target_include_directories(booksim_exe PRIVATE ${BOOKSIM_INCLUDE_DIRS})
 
-# Installation rules
-install(TARGETS booksim booksim_exe
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
-)
+if(BOOKSIM_INSTALL)
+    # Installation rules
+    install(TARGETS booksim booksim_exe
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+    )
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/
-    FILES_MATCHING PATTERN "*.hpp"
-)
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+        DESTINATION include/
+        FILES_MATCHING PATTERN "*.hpp"
+    )
 
-# Also install booksim_lib.h
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/booksim_lib.hpp
-    DESTINATION include/
-)
+    # Also install booksim_lib.h
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/booksim_lib.hpp
+        DESTINATION include/
+    )
+endif()
