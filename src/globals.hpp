@@ -34,7 +34,8 @@
 #include <utility>
 
 #include "config_utils.hpp"
-//#include "trafficmanager.hpp"
+#include "spike.hpp"
+
 
 class Stats;
 class TrafficManager;
