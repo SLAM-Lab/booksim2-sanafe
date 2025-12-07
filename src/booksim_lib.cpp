@@ -41,19 +41,6 @@
 #include <ctime>
 #include <sstream>
 
-vector<SpikeEvent> gSpikeEvents{};
-// static bool initialized = false;
-
-// void booksim_init() {
-//   if (initialized) {
-//     std::cerr << "BookSim2 is already initialized!" << std::endl;
-//   }
-//   initialized = true;
-
-//   return;
-// }
-void booksim_init() { }
-
 BookSimConfig booksim_load_config(const std::vector<std::string> config_vec)
 {
   BookSimConfig config{};
@@ -110,11 +97,11 @@ double booksim_run( BookSimConfig const & config)
   SimContext::get().trafficManager = TrafficManagerSpike::New( config, net ) ;
   INFO("Pushing %zu spike events.\n", gSpikeEvents.size());
 
-  for (auto &event : gSpikeEvents)
+  for (auto &event : SimContext::get().gSpikeEvents)
   {
     SimContext::get().trafficManager->PushTraceEvent(event);
   }
-  gSpikeEvents.clear();
+  SimContext::get().gSpikeEvents.clear();
   /*Start the simulation run
    */
 
@@ -150,7 +137,7 @@ double booksim_run( BookSimConfig const & config)
 void booksim_create_processing_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, double generation_latency )
 {
   SpikeEvent event = SpikeEvent::CreateProcessingEvent(timestep, src_neuron, src_hw, generation_latency);
-  gSpikeEvents.push_back(event);
+  SimContext::get().gSpikeEvents.push_back(event);
 
   return;
 }
@@ -165,7 +152,7 @@ void booksim_create_spike_event( int timestep, std::pair<std::string, int> src_n
   event.generation_latency = generation_latency;
   event.processing_latency = processing_latency;
 
-  gSpikeEvents.push_back(event);
+  SimContext::get().gSpikeEvents.push_back(event);
 
   return;
 }
@@ -175,7 +162,7 @@ void booksim_close()
   delete SimContext::get().trafficManager;
   SimContext::get().trafficManager = NULL;
 
-  gSpikeEvents.clear();
+  SimContext::get().gSpikeEvents.clear();
 
   return;
 }

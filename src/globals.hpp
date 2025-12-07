@@ -46,6 +46,7 @@ struct SimContext {
     TrafficManager * trafficManager = nullptr;
     // jboyle: Added to track receiving cores
     std::vector<int> gReceiverBusyCycles;
+    vector<SpikeEvent> gSpikeEvents;
     std::vector<std::deque<std::pair<int, int>>> gReceiverBuffers;
     int gK;
     int gN;
