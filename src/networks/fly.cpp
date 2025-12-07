@@ -47,7 +47,7 @@ void KNFly::_ComputeSize( const Configuration &config )
   _k = config.GetInt( "k" );
   _n = config.GetInt( "n" );
 
-  gK = _k; gN = _n;
+  SimContext::get().gK = _k; SimContext::get().gN = _n;
 
   _nodes = powi( _k, _n );
 

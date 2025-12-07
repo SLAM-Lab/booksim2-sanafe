@@ -33,29 +33,39 @@
 #include <deque>
 #include <utility>
 
-/*all declared in main.cpp*/
-
-int GetSimTime();
+#include "config_utils.hpp"
+//#include "trafficmanager.hpp"
 
 class Stats;
-Stats * GetStats(const std::string & name);
+class TrafficManager;
 
-extern bool gPrintActivity;
+// jboyle: Created global context struct for multithreaded runs
+struct SimContext {
 
-extern int gK;
-extern int gN;
-extern int gC;
-extern int gYCount;
-extern int gXCount;
+    std::ostream * gWatchOut;
+    TrafficManager * trafficManager = nullptr;
+    // jboyle: Added to track receiving cores
+    std::vector<int> gReceiverBusyCycles;
+    std::vector<std::deque<std::pair<int, int>>> gReceiverBuffers;
+    int gK;
+    int gN;
+    int gC;
+    int gYCount;
+    int gXCount;
+    int gNodes;
+    bool gPrintActivity;
+    bool gTrace;
 
-extern int gNodes;
+    // Singleton Accessor (Thread Local)
+    static SimContext& get();
+    int getSimTime();
+    Stats * getStats(const std::string & name);
+    // Initialize from configuration
+    void init(const Configuration& config);
 
-extern bool gTrace;
-
-extern std::ostream * gWatchOut;
-
-// jboyle: Added to track receiving cores
-extern std::vector<int> gReceiverBusyCycles;
-extern std::vector<std::deque<std::pair<int, int>>> gReceiverBuffers;
-
+private:
+    SimContext() = default;
+    SimContext(const SimContext&) = delete;
+    void operator=(const SimContext&) = delete;
+};
 #endif

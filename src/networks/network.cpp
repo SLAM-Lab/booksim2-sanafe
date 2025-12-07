@@ -131,7 +131,7 @@ void Network::_Alloc( )
 	  ( _channels != -1 ) );
 
   _routers.resize(_size);
-  gNodes = _nodes;
+  SimContext::get().gNodes = _nodes;
 
   /*booksim used arrays of flits as the channels which makes have capacity of
    *one. To simulate channel latency, flitchannel class has been added

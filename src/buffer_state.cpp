@@ -391,7 +391,7 @@ void BufferState::FeedbackSharedBufferPolicy::SetMinLatency(int min_latency)
 void BufferState::FeedbackSharedBufferPolicy::SendingFlit(Flit const * const f)
 {
   SharedBufferPolicy::SendingFlit(f);
-  _flit_sent_time[f->vc].push(GetSimTime());
+  _flit_sent_time[f->vc].push(SimContext::get().getSimTime());
 }
 
 int BufferState::FeedbackSharedBufferPolicy::_ComputeRTT(int vc, int last_rtt) const
@@ -416,7 +416,7 @@ int BufferState::FeedbackSharedBufferPolicy::_ComputeMaxSlots(int vc) const
 {
   int max_slots = _occupancy_limit[vc];
   if(!_flit_sent_time[vc].empty()) {
-    int min_rtt = GetSimTime() - _flit_sent_time[vc].front();
+    int min_rtt =  SimContext::get().getSimTime() - _flit_sent_time[vc].front();
     int rtt = _ComputeRTT(vc, min_rtt);
     int limit = _ComputeLimit(rtt);
     max_slots = min(max_slots, limit);
@@ -428,7 +428,7 @@ void BufferState::FeedbackSharedBufferPolicy::FreeSlotFor(int vc)
 {
   SharedBufferPolicy::FreeSlotFor(vc);
   assert(!_flit_sent_time[vc].empty());
-  int const last_rtt = GetSimTime() - _flit_sent_time[vc].front();
+  int const last_rtt =  SimContext::get().getSimTime() - _flit_sent_time[vc].front();
 #ifdef DEBUG_FEEDBACK
   cerr << FullName() << ": Probe for VC "
        << vc << " came back after "

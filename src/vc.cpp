@@ -96,7 +96,7 @@ void VC::AddFlit( Flit *f )
     
   // update flit priority before adding to VC buffer
   if(_pri_type == local_age_based) {
-    f->pri = numeric_limits<int>::max() - GetSimTime();
+    f->pri = numeric_limits<int>::max() - SimContext::get().getSimTime();
     assert(f->pri >= 0);
   } else if(_pri_type == hop_count_based) {
     f->pri = f->hops;
@@ -129,7 +129,7 @@ void VC::SetState( eVCState s )
   Flit * f = FrontFlit();
   
   if(f && f->watch)
-    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		<< "Changing state from " << VC::VCSTATE[_state]
 		<< " to " << VC::VCSTATE[s] << "." << endl;
   
@@ -168,7 +168,7 @@ void VC::UpdatePriority()
 	if(bf->pri > df->pri) df = bf;
       }
       if((df != f) && (df->watch || f->watch)) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		    << "Flit " << df->id
 		    << " donates priority to flit " << f->id
 		    << "." << endl;
@@ -176,7 +176,7 @@ void VC::UpdatePriority()
       f = df;
     }
     if(f->watch)
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		  << "Flit " << f->id
 		  << " sets priority to " << f->pri
 		  << "." << endl;

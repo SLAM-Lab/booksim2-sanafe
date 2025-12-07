@@ -104,14 +104,14 @@ void qtree_nca( const Router *r, const Flit *f,
     
     int dest   = f->dest;
     
-    for (int i = height+1; i < gN; i++) 
-      dest /= gK;
-    if ( pos == dest / gK ) 
+    for (int i = height+1; i < SimContext::get().SimContext::get().gN; i++) 
+      dest /= SimContext::get().gK;
+    if ( pos == dest / SimContext::get().gK ) 
       // Route down to child
-      out_port = dest % gK ; 
+      out_port = dest % SimContext::get().gK ; 
     else
       // Route up to parent
-      out_port = gK;        
+      out_port = SimContext::get().gK;        
 
   }
 
@@ -167,14 +167,14 @@ void tree4_anca( const Router *r, const Flit *f,
       if ( dest / 4 == rP / 2 )
 	out_port = dest % 4;
       else {
-	out_port = gK;
-	range = gK;
+	out_port = SimContext::get().gK;
+	range = SimContext::get().gK;
       }
     } else {
       if ( dest/4 == rP )
 	out_port = dest % 4;
       else {
-	out_port = gK;
+	out_port = SimContext::get().gK;
 	range = 2;
       }
     }
@@ -235,12 +235,12 @@ void tree4_nca( const Router *r, const Flit *f,
       if ( dest / 4 == rP / 2 )
 	out_port = dest % 4;
       else
-	out_port = gK + RandomInt(gK-1);
+	out_port = SimContext::get().gK + RandomInt(SimContext::get().gK-1);
     } else {
       if ( dest/4 == rP )
 	out_port = dest % 4;
       else
-	out_port = gK + RandomInt(1);
+	out_port = SimContext::get().gK + RandomInt(1);
     }
     
     //  cout << "Router("<<rH<<","<<rP<<"): id= " << f->id << " dest= " << f->dest << " out_port = "
@@ -285,12 +285,12 @@ void fattree_nca( const Router *r, const Flit *f,
     
     int dest = f->dest;
     int router_id = r->GetID(); //routers are numbered with smallest at the top level
-    int routers_per_level = powi(gK, gN-1);
+    int routers_per_level = powi(SimContext::get().gK, SimContext::get().gN-1);
     int pos = router_id%routers_per_level;
     int router_depth  = router_id/ routers_per_level; //which level
-    int routers_per_neighborhood = powi(gK,gN-router_depth-1);
+    int routers_per_neighborhood = powi(SimContext::get().gK,SimContext::get().gN-router_depth-1);
     int router_neighborhood = pos/routers_per_neighborhood; //coverage of this tree
-    int router_coverage = powi(gK, gN-router_depth);  //span of the tree from this router
+    int router_coverage = powi(SimContext::get().gK, SimContext::get().gN-router_depth);  //span of the tree from this router
     
 
     //NCA reached going down
@@ -299,17 +299,17 @@ void fattree_nca( const Router *r, const Flit *f,
       //down ports are numbered first
 
       //ejection
-      if(router_depth == gN-1){
-	out_port = dest%gK;
+      if(router_depth == SimContext::get().gN-1){
+	out_port = dest%SimContext::get().gK;
       } else {	
 	//find the down port for the destination
-	int router_branch_coverage = powi(gK, gN-(router_depth+1)); 
+	int router_branch_coverage = powi(SimContext::get().gK, SimContext::get().gN-(router_depth+1)); 
 	out_port = (dest-router_neighborhood* router_coverage)/router_branch_coverage;
       }
     } else {
       //up ports are numbered last
-      assert(in_channel<gK);//came from a up channel
-      out_port = gK+RandomInt(gK-1);
+      assert(in_channel<SimContext::get().gK);//came from a up channel
+      out_port = SimContext::get().gK+RandomInt(SimContext::get().gK-1);
     }
   }  
   outputs->Clear( );
@@ -352,12 +352,12 @@ void fattree_anca( const Router *r, const Flit *f,
 
     int dest = f->dest;
     int router_id = r->GetID(); //routers are numbered with smallest at the top level
-    int routers_per_level = powi(gK, gN-1);
+    int routers_per_level = powi(SimContext::get().gK, SimContext::get().gN-1);
     int pos = router_id%routers_per_level;
     int router_depth  = router_id/ routers_per_level; //which level
-    int routers_per_neighborhood = powi(gK,gN-router_depth-1);
+    int routers_per_neighborhood = powi(SimContext::get().gK,SimContext::get().gN-router_depth-1);
     int router_neighborhood = pos/routers_per_neighborhood; //coverage of this tree
-    int router_coverage = powi(gK, gN-router_depth);  //span of the tree from this router
+    int router_coverage = powi(SimContext::get().gK, SimContext::get().gN-router_depth);  //span of the tree from this router
     
 
     //NCA reached going down
@@ -366,19 +366,19 @@ void fattree_anca( const Router *r, const Flit *f,
       //down ports are numbered first
 
       //ejection
-      if(router_depth == gN-1){
-	out_port = dest%gK;
+      if(router_depth == SimContext::get().gN-1){
+	out_port = dest%SimContext::get().gK;
       } else {	
 	//find the down port for the destination
-	int router_branch_coverage = powi(gK, gN-(router_depth+1)); 
+	int router_branch_coverage = powi(SimContext::get().gK, SimContext::get().gN-(router_depth+1)); 
 	out_port = (dest-router_neighborhood* router_coverage)/router_branch_coverage;
       }
     } else {
       //up ports are numbered last
-      assert(in_channel<gK);//came from a up channel
-      out_port = gK;
-      int random1 = RandomInt(gK-1); // Chose two ports out of the possible at random, compare loads, choose one.
-      int random2 = RandomInt(gK-1);
+      assert(in_channel<SimContext::get().gK);//came from a up channel
+      out_port = SimContext::get().gK;
+      int random1 = RandomInt(SimContext::get().gK-1); // Chose two ports out of the possible at random, compare loads, choose one.
+      int random2 = RandomInt(SimContext::get().gK-1);
       if (r->GetUsedCredit(out_port + random1) > r->GetUsedCredit(out_port + random2)){
 	out_port = out_port + random2;
       }else{
@@ -429,7 +429,7 @@ void adaptive_xy_yx_mesh( const Router *r, const Flit *f,
   } else if(r->GetID() == f->dest) {
 
     // at destination router, we don't need to separate VCs by dim order
-    out_port = 2*gN;
+    out_port = 2*SimContext::get().gN;
 
   } else {
 
@@ -443,7 +443,7 @@ void adaptive_xy_yx_mesh( const Router *r, const Flit *f,
     // Route order (XY or YX) determined when packet is injected
     //  into the network, adaptively
     bool x_then_y;
-    if(in_channel < 2*gN){
+    if(in_channel < 2*SimContext::get().gN){
       x_then_y =  (f->vc < (vcBegin + available_vcs));
     } else {
       int credit_xy = r->GetUsedCredit(out_port_xy);
@@ -501,7 +501,7 @@ void xy_yx_mesh( const Router *r, const Flit *f,
   } else if(r->GetID() == f->dest) {
 
     // at destination router, we don't need to separate VCs by dim order
-    out_port = 2*gN;
+    out_port = 2*SimContext::get().gN;
 
   } else {
 
@@ -511,7 +511,7 @@ void xy_yx_mesh( const Router *r, const Flit *f,
 
     // Route order (XY or YX) determined when packet is injected
     //  into the network
-    bool x_then_y = ((in_channel < 2*gN) ?
+    bool x_then_y = ((in_channel < 2*SimContext::get().gN) ?
 		     (f->vc < (vcBegin + available_vcs)) :
 		     (RandomInt(1) > 0));
 
@@ -540,25 +540,25 @@ void xy_yx_mesh( const Router *r, const Flit *f,
 int dor_next_mesh( int cur, int dest, bool descending )
 {
   if ( cur == dest ) {
-    return 2*gN;  // Eject
+    return 2*SimContext::get().gN;  // Eject
   }
 
   int dim_left;
 
   if(descending) {
-    for ( dim_left = ( gN - 1 ); dim_left > 0; --dim_left ) {
-      if ( ( cur * gK / gNodes ) != ( dest * gK / gNodes ) ) { break; }
-      cur = (cur * gK) % gNodes; dest = (dest * gK) % gNodes;
+    for ( dim_left = ( SimContext::get().SimContext::get().gN - 1 ); dim_left > 0; --dim_left ) {
+      if ( ( cur * SimContext::get().gK / SimContext::get().gNodes ) != ( dest * SimContext::get().gK / SimContext::get().gNodes ) ) { break; }
+      cur = (cur * SimContext::get().gK) % SimContext::get().gNodes; dest = (dest * SimContext::get().gK) % SimContext::get().gNodes;
     }
-    cur = (cur * gK) / gNodes;
-    dest = (dest * gK) / gNodes;
+    cur = (cur * SimContext::get().gK) / SimContext::get().gNodes;
+    dest = (dest * SimContext::get().gK) / SimContext::get().gNodes;
   } else {
-    for ( dim_left = 0; dim_left < ( gN - 1 ); ++dim_left ) {
-      if ( ( cur % gK ) != ( dest % gK ) ) { break; }
-      cur /= gK; dest /= gK;
+    for ( dim_left = 0; dim_left < ( SimContext::get().SimContext::get().gN - 1 ); ++dim_left ) {
+      if ( ( cur % SimContext::get().gK ) != ( dest % SimContext::get().gK ) ) { break; }
+      cur /= SimContext::get().gK; dest /= SimContext::get().gK;
     }
-    cur %= gK;
-    dest %= gK;
+    cur %= SimContext::get().gK;
+    dest %= SimContext::get().gK;
   }
 
   if ( cur < dest ) {
@@ -578,18 +578,18 @@ void dor_next_torus( int cur, int dest, int in_port,
   int dir;
   int dist2;
 
-  for ( dim_left = 0; dim_left < gN; ++dim_left ) {
-    if ( ( cur % gK ) != ( dest % gK ) ) { break; }
-    cur /= gK; dest /= gK;
+  for ( dim_left = 0; dim_left < SimContext::get().gN; ++dim_left ) {
+    if ( ( cur % SimContext::get().gK ) != ( dest % SimContext::get().gK ) ) { break; }
+    cur /= SimContext::get().gK; dest /= SimContext::get().gK;
   }
   
-  if ( dim_left < gN ) {
+  if ( dim_left < SimContext::get().SimContext::get().gN ) {
 
     if ( (in_port/2) != dim_left ) {
       // Turning into a new dimension
 
-      cur %= gK; dest %= gK;
-      dist2 = gK - 2 * ( ( dest - cur + gK ) % gK );
+      cur %= SimContext::get().gK; dest %= SimContext::get().gK;
+      dist2 = SimContext::get().gK - 2 * ( ( dest - cur + SimContext::get().gK ) % SimContext::get().gK );
       
       if ( ( dist2 > 0 ) || 
 	   ( ( dist2 == 0 ) && ( RandomInt( 1 ) ) ) ) {
@@ -610,8 +610,8 @@ void dor_next_torus( int cur, int dest, int in_port,
 	  if ( ( ( dir == 0 ) && ( cur > dest ) ) ||
 	       ( ( dir == 1 ) && ( cur < dest ) ) ) {
 	    *partition = 1;
-	  } else if ( ( ( dir == 0 ) && ( cur <= (gK-1)/2 ) && ( dest >  (gK-1)/2 ) ) ||
-		      ( ( dir == 1 ) && ( cur >  (gK-1)/2 ) && ( dest <= (gK-1)/2 ) ) ) {
+	  } else if ( ( ( dir == 0 ) && ( cur <= (SimContext::get().gK-1)/2 ) && ( dest >  (SimContext::get().gK-1)/2 ) ) ||
+		      ( ( dir == 1 ) && ( cur >  (SimContext::get().gK-1)/2 ) && ( dest <= (SimContext::get().gK-1)/2 ) ) ) {
 	    *partition = 0;
 	  } else {
 	    *partition = RandomInt( 1 ); // use either VC set
@@ -634,7 +634,7 @@ void dor_next_torus( int cur, int dest, int in_port,
     }    
 
   } else {
-    *out_port = 2*gN;  // Eject
+    *out_port = 2*SimContext::get().gN;  // Eject
   }
 }
 
@@ -661,7 +661,7 @@ void dim_order_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *
   assert(((f->vc >= vcBegin) && (f->vc <= vcEnd)) || (inject && (f->vc < 0)));
 
   if ( !inject && f->watch ) {
-    *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 	       << "Adding VC range [" 
 	       << vcBegin << "," 
 	       << vcEnd << "]"
@@ -702,7 +702,7 @@ void dim_order_ni_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
   // at the destination router, we don't need to separate VCs by destination
   if(inject || (r->GetID() != f->dest)) {
 
-    int const vcs_per_dest = (vcEnd - vcBegin + 1) / gNodes;
+    int const vcs_per_dest = (vcEnd - vcBegin + 1) / SimContext::get().gNodes;
     assert(vcs_per_dest > 0);
 
     vcBegin += f->dest * vcs_per_dest;
@@ -711,7 +711,7 @@ void dim_order_ni_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
   }
   
   if( !inject && f->watch ) {
-    *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 	       << "Adding VC range [" 
 	       << vcBegin << "," 
 	       << vcEnd << "]"
@@ -754,19 +754,19 @@ void dim_order_pni_mesh( const Router *r, const Flit *f, int in_channel, OutputS
     if(!inject) {
       int out_dim = out_port / 2;
       for(int d = 0; d < out_dim; ++d) {
-	next_coord /= gK;
+	next_coord /= SimContext::get().gK;
       }
     }
-    next_coord %= gK;
-    assert(next_coord >= 0 && next_coord < gK);
-    int vcs_per_dest = (vcEnd - vcBegin + 1) / gK;
+    next_coord %= SimContext::get().gK;
+    assert(next_coord >= 0 && next_coord < SimContext::get().gK);
+    int vcs_per_dest = (vcEnd - vcBegin + 1) / SimContext::get().gK;
     assert(vcs_per_dest > 0);
     vcBegin += next_coord * vcs_per_dest;
     vcEnd = vcBegin + vcs_per_dest - 1;
   }
 
   if( !inject && f->watch ) {
-    *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 	       << "Adding VC range [" 
 	       << vcBegin << "," 
 	       << vcEnd << "]"
@@ -793,17 +793,17 @@ int rand_min_intr_mesh( int src, int dest )
   int intm = 0;
   int offset = 1;
 
-  for ( int n = 0; n < gN; ++n ) {
-    dist = ( dest % gK ) - ( src % gK );
+  for ( int n = 0; n < SimContext::get().gN; ++n ) {
+    dist = ( dest % SimContext::get().gK ) - ( src % SimContext::get().gK );
 
     if ( dist > 0 ) {
-      intm += offset * ( ( src % gK ) + RandomInt( dist ) );
+      intm += offset * ( ( src % SimContext::get().gK ) + RandomInt( dist ) );
     } else {
-      intm += offset * ( ( dest % gK ) + RandomInt( -dist ) );
+      intm += offset * ( ( dest % SimContext::get().gK ) + RandomInt( -dist ) );
     }
 
-    offset *= gK;
-    dest /= gK; src /= gK;
+    offset *= SimContext::get().gK;
+    dest /= SimContext::get().gK; src /= SimContext::get().gK;
   }
 
   return intm;
@@ -837,7 +837,7 @@ void romm_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outpu
 
   } else {
 
-    if ( in_channel == 2*gN ) {
+    if ( in_channel == 2*SimContext::get().gN ) {
       f->ph   = 0;  // Phase 0
       f->intm = rand_min_intr_mesh( f->src, f->dest );
     } 
@@ -893,7 +893,7 @@ void romm_ni_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *ou
   // at the destination router, we don't need to separate VCs by destination
   if(inject || (r->GetID() != f->dest)) {
 
-    int const vcs_per_dest = (vcEnd - vcBegin + 1) / gNodes;
+    int const vcs_per_dest = (vcEnd - vcBegin + 1) / SimContext::get().gNodes;
     assert(vcs_per_dest > 0);
 
     vcBegin += f->dest * vcs_per_dest;
@@ -909,7 +909,7 @@ void romm_ni_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *ou
 
   } else {
 
-    if ( in_channel == 2*gN ) {
+    if ( in_channel == 2*SimContext::get().gN ) {
       f->ph   = 0;  // Phase 0
       f->intm = rand_min_intr_mesh( f->src, f->dest );
     } 
@@ -955,13 +955,13 @@ void min_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *
     return;
   } else if(r->GetID() == f->dest) {
     // ejection can also use all VCs
-    outputs->AddRange(2*gN, vcBegin, vcEnd);
+    outputs->AddRange(2*SimContext::get().gN, vcBegin, vcEnd);
     return;
   }
 
   int in_vc;
 
-  if ( in_channel == 2*gN ) {
+  if ( in_channel == 2*SimContext::get().gN ) {
     in_vc = vcEnd; // ignore the injection VC
   } else {
     in_vc = f->vc;
@@ -972,7 +972,7 @@ void min_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *
   outputs->AddRange( out_port, 0, vcBegin, vcBegin );
   
   if ( f->watch ) {
-      *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		  << "Adding VC range [" 
 		  << vcBegin << "," 
 		  << vcBegin << "]"
@@ -988,12 +988,12 @@ void min_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *
     int cur = r->GetID( );
     int dest = f->dest;
     
-    for ( int n = 0; n < gN; ++n ) {
-      if ( ( cur % gK ) != ( dest % gK ) ) { 
+    for ( int n = 0; n < SimContext::get().gN; ++n ) {
+      if ( ( cur % SimContext::get().gK ) != ( dest % SimContext::get().gK ) ) { 
 	// Add minimal direction in dimension 'n'
-	if ( ( cur % gK ) < ( dest % gK ) ) { // Right
+	if ( ( cur % SimContext::get().gK ) < ( dest % SimContext::get().gK ) ) { // Right
 	  if ( f->watch ) {
-	    *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+	    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 			<< "Adding VC range [" 
 		       << (vcBegin+1) << "," 
 			<< vcEnd << "]"
@@ -1007,7 +1007,7 @@ void min_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *
 	  outputs->AddRange( 2*n, vcBegin+1, vcEnd, 1 ); 
 	} else { // Left
 	  if ( f->watch ) {
-	    *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+	    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 			<< "Adding VC range [" 
 		       << (vcBegin+1) << "," 
 			<< vcEnd << "]"
@@ -1021,8 +1021,8 @@ void min_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *
 	  outputs->AddRange( 2*n + 1, vcBegin+1, vcEnd, 1 ); 
 	}
       }
-      cur  /= gK;
-      dest /= gK;
+      cur  /= SimContext::get().gK;
+      dest /= SimContext::get().gK;
     }
   } 
 }
@@ -1069,22 +1069,22 @@ void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
     // In this case, go to the last dimension instead.
 
     int n;
-    for ( n = 0; n < gN; ++n ) {
-      if ( ( ( cur % gK ) != ( dest % gK ) ) &&
+    for ( n = 0; n < SimContext::get().gN; ++n ) {
+      if ( ( ( cur % SimContext::get().gK ) != ( dest % SimContext::get().gK ) ) &&
 	   !( ( in_channel/2 == 0 ) &&
 	      ( n == 0 ) &&
 	      ( in_vc < vcBegin+2*vc_mult ) ) ) {
 	break;
       }
 
-      cur  /= gK;
-      dest /= gK;
+      cur  /= SimContext::get().gK;
+      dest /= SimContext::get().gK;
     }
 
-    assert( n < gN );
+    assert( n < SimContext::get().SimContext::get().gN );
 
     if ( f->watch ) {
-      *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		  << "PLANAR ADAPTIVE: flit " << f->id 
 		  << " in adaptive plane " << n << "." << endl;
     }
@@ -1094,14 +1094,14 @@ void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
     // Can route productively in d_{i,2}
     bool increase;
     bool fault;
-    if ( ( cur % gK ) < ( dest % gK ) ) { // Increasing
+    if ( ( cur % SimContext::get().gK ) < ( dest % SimContext::get().gK ) ) { // Increasing
       increase = true;
       if ( !r->IsFaultyOutput( 2*n ) ) {
 	outputs->AddRange( 2*n, vcBegin+2*vc_mult, vcEnd );
 	fault = false;
 
 	if ( f->watch ) {
-	  *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		      << "PLANAR ADAPTIVE: increasing in dimension " << n
 		      << "." << endl;
 	}
@@ -1115,7 +1115,7 @@ void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
 	fault = false;
 
 	if ( f->watch ) {
-	  *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		      << "PLANAR ADAPTIVE: decreasing in dimension " << n
 		      << "." << endl;
 	}
@@ -1124,9 +1124,9 @@ void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
       }
     }
       
-    n = ( n + 1 ) % gN;
-    cur  /= gK;
-    dest /= gK;
+    n = ( n + 1 ) % SimContext::get().gN;
+    cur  /= SimContext::get().gK;
+    dest /= SimContext::get().gK;
       
     if ( !increase ) {
       vcBegin += vc_mult;
@@ -1134,9 +1134,9 @@ void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
     vcEnd = vcBegin + vc_mult - 1;
       
     int d1_min_c;
-    if ( ( cur % gK ) < ( dest % gK ) ) { // Increasing in d_{i+1}
+    if ( ( cur % SimContext::get().gK ) < ( dest % SimContext::get().gK ) ) { // Increasing in d_{i+1}
       d1_min_c = 2*n;
-    } else if ( ( cur % gK ) != ( dest % gK ) ) {  // Decreasing in d_{i+1}
+    } else if ( ( cur % SimContext::get().gK ) != ( dest % SimContext::get().gK ) ) {  // Decreasing in d_{i+1}
       d1_min_c = 2*n + 1;
     } else {
       d1_min_c = -1;
@@ -1154,7 +1154,7 @@ void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
       }
 
       if ( f->watch ) {
-	*gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		    << "PLANAR ADAPTIVE: avoiding 180 in dimension " << n
 		    << "." << endl;
       }
@@ -1169,10 +1169,10 @@ void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
       }
     } else if ( fault ) { // need to misroute!
       bool atedge;
-      if ( cur % gK == 0 ) {
+      if ( cur % SimContext::get().gK == 0 ) {
 	d1_min_c = 2*n;
 	atedge = true;
-      } else if ( cur % gK == gK - 1 ) {
+      } else if ( cur % SimContext::get().gK == SimContext::get().gK - 1 ) {
 	d1_min_c = 2*n + 1;
 	atedge = true;
       } else {
@@ -1194,7 +1194,7 @@ void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
       }
     }
   } else {
-    outputs->AddRange( 2*gN, vcBegin, vcEnd ); 
+    outputs->AddRange( 2*SimContext::get().gN, vcBegin, vcEnd ); 
   }
 }
 
@@ -1237,10 +1237,10 @@ void limited_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputS
     if ( ( f->vc != vcEnd ) && 
 	 ( f->dr != vcEnd - 1 ) ) {
       
-      for ( int n = 0; n < gN; ++n ) {
-	if ( ( cur % gK ) != ( dest % gK ) ) { 
+      for ( int n = 0; n < SimContext::get().gN; ++n ) {
+	if ( ( cur % SimContext::get().gK ) != ( dest % SimContext::get().gK ) ) { 
 	  int min_port;
-	  if ( ( cur % gK ) < ( dest % gK ) ) { 
+	  if ( ( cur % SimContext::get().gK ) < ( dest % SimContext::get().gK ) ) { 
 	    min_port = 2*n; // Right
 	  } else {
 	    min_port = 2*n + 1; // Left
@@ -1257,8 +1257,8 @@ void limited_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputS
 	  outputs->AddRange( 2*n+1, vcBegin, vcEnd - 1, 1 );
 	}
 	
-	cur  /= gK;
-	dest /= gK;
+	cur  /= SimContext::get().gK;
+	dest /= SimContext::get().gK;
       }
       
     } else {
@@ -1267,7 +1267,7 @@ void limited_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputS
     }
     
   } else { // at destination
-    outputs->AddRange( 2*gN, vcBegin, vcEnd ); 
+    outputs->AddRange( 2*SimContext::get().gN, vcBegin, vcEnd ); 
   }
 }
 */
@@ -1299,9 +1299,9 @@ void valiant_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *ou
 
   } else {
 
-    if ( in_channel == 2*gN ) {
+    if ( in_channel == 2*SimContext::get().gN ) {
       f->ph   = 0;  // Phase 0
-      f->intm = RandomInt( gNodes - 1 );
+      f->intm = RandomInt( SimContext::get().gNodes - 1 );
     }
 
     if ( ( f->ph == 0 ) && ( r->GetID( ) == f->intm ) ) {
@@ -1361,16 +1361,16 @@ void valiant_torus( const Router *r, const Flit *f, int in_channel, OutputSet *o
   } else {
 
     int phase;
-    if ( in_channel == 2*gN ) {
+    if ( in_channel == 2*SimContext::get().gN ) {
       phase   = 0;  // Phase 0
-      f->intm = RandomInt( gNodes - 1 );
+      f->intm = RandomInt( SimContext::get().gNodes - 1 );
     } else {
       phase = f->ph / 2;
     }
 
     if ( ( phase == 0 ) && ( r->GetID( ) == f->intm ) ) {
       phase = 1; // Go to phase 1
-      in_channel = 2*gN; // ensures correct vc selection at the beginning of phase 2
+      in_channel = 2*SimContext::get().gN; // ensures correct vc selection at the beginning of phase 2
     }
   
     int ring_part;
@@ -1434,7 +1434,7 @@ void valiant_ni_torus( const Router *r, const Flit *f, int in_channel,
   // at the destination router, we don't need to separate VCs by destination
   if(inject || (r->GetID() != f->dest)) {
 
-    int const vcs_per_dest = (vcEnd - vcBegin + 1) / gNodes;
+    int const vcs_per_dest = (vcEnd - vcBegin + 1) / SimContext::get().gNodes;
     assert(vcs_per_dest > 0);
 
     vcBegin += f->dest * vcs_per_dest;
@@ -1451,16 +1451,16 @@ void valiant_ni_torus( const Router *r, const Flit *f, int in_channel,
   } else {
 
     int phase;
-    if ( in_channel == 2*gN ) {
+    if ( in_channel == 2*SimContext::get().gN ) {
       phase   = 0;  // Phase 0
-      f->intm = RandomInt( gNodes - 1 );
+      f->intm = RandomInt( SimContext::get().gNodes - 1 );
     } else {
       phase = f->ph / 2;
     }
 
     if ( ( f->ph == 0 ) && ( r->GetID( ) == f->intm ) ) {
       f->ph = 1; // Go to phase 1
-      in_channel = 2*gN; // ensures correct vc selection at the beginning of phase 2
+      in_channel = 2*SimContext::get().gN; // ensures correct vc selection at the beginning of phase 2
     }
   
     int ring_part;
@@ -1494,7 +1494,7 @@ void valiant_ni_torus( const Router *r, const Flit *f, int in_channel,
     }
 
     if (f->watch) {
-      *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		 << "Adding VC range [" 
 		 << vcBegin << "," 
 		 << vcEnd << "]"
@@ -1562,7 +1562,7 @@ void dim_order_torus( const Router *r, const Flit *f, int in_channel,
     }
 
     if ( f->watch ) {
-      *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		 << "Adding VC range [" 
 		 << vcBegin << "," 
 		 << vcEnd << "]"
@@ -1618,7 +1618,7 @@ void dim_order_ni_torus( const Router *r, const Flit *f, int in_channel,
     // at the destination router, we don't need to separate VCs by destination
     if(cur != dest) {
 
-      int const vcs_per_dest = (vcEnd - vcBegin + 1) / gNodes;
+      int const vcs_per_dest = (vcEnd - vcBegin + 1) / SimContext::get().gNodes;
       assert(vcs_per_dest);
 
       vcBegin += f->dest * vcs_per_dest;
@@ -1627,7 +1627,7 @@ void dim_order_ni_torus( const Router *r, const Flit *f, int in_channel,
     }
 
     if ( f->watch ) {
-      *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		 << "Adding VC range [" 
 		 << vcBegin << "," 
 		 << vcEnd << "]"
@@ -1695,7 +1695,7 @@ void dim_order_bal_torus( const Router *r, const Flit *f, int in_channel,
     }
 
     if ( f->watch ) {
-      *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		 << "Adding VC range [" 
 		 << vcBegin << "," 
 		 << vcEnd << "]"
@@ -1741,11 +1741,11 @@ void min_adapt_torus( const Router *r, const Flit *f, int in_channel, OutputSet 
     return;
   } else if(r->GetID() == f->dest) {
     // ejection can also use all VCs
-    outputs->AddRange(2*gN, vcBegin, vcEnd);
+    outputs->AddRange(2*SimContext::get().gN, vcBegin, vcEnd);
   }
 
   int in_vc;
-  if ( in_channel == 2*gN ) {
+  if ( in_channel == 2*SimContext::get().gN ) {
     in_vc = vcEnd; // ignore the injection VC
   } else {
     in_vc = f->vc;
@@ -1759,9 +1759,9 @@ void min_adapt_torus( const Router *r, const Flit *f, int in_channel, OutputSet 
   if ( in_vc > ( vcBegin + 1 ) ) { // If not in the escape VCs
     // Minimal adaptive for all other channels
     
-    for ( int n = 0; n < gN; ++n ) {
-      if ( ( cur % gK ) != ( dest % gK ) ) {
-	int dist2 = gK - 2 * ( ( ( dest % gK ) - ( cur % gK ) + gK ) % gK );
+    for ( int n = 0; n < SimContext::get().gN; ++n ) {
+      if ( ( cur % SimContext::get().gK ) != ( dest % SimContext::get().gK ) ) {
+	int dist2 = SimContext::get().gK - 2 * ( ( ( dest % SimContext::get().gK ) - ( cur % SimContext::get().gK ) + SimContext::get().gK ) % SimContext::get().gK );
 	
 	if ( dist2 > 0 ) { /*) || 
 			     ( ( dist2 == 0 ) && ( RandomInt( 1 ) ) ) ) {*/
@@ -1771,14 +1771,14 @@ void min_adapt_torus( const Router *r, const Flit *f, int in_channel, OutputSet 
 	}
       }
 
-      cur  /= gK;
-      dest /= gK;
+      cur  /= SimContext::get().gK;
+      dest /= SimContext::get().gK;
     }
     
     // DOR for the escape channel (VCs 0-1), low priority --- 
     // trick the algorithm with the in channel.  want VC assignment
     // as if we had injected at this node
-    dor_next_torus( r->GetID( ), f->dest, 2*gN,
+    dor_next_torus( r->GetID( ), f->dest, 2*SimContext::get().gN,
 		    &out_port, &f->ph, false );
   } else {
     // DOR for the escape channel (VCs 0-1), low priority 
@@ -1822,15 +1822,15 @@ void dest_tag_fly( const Router *r, const Flit *f, int in_channel,
 
   } else {
 
-    int stage = ( r->GetID( ) * gK ) / gNodes;
+    int stage = ( r->GetID( ) * SimContext::get().gK ) / SimContext::get().gNodes;
     int dest  = f->dest;
 
-    while( stage < ( gN - 1 ) ) {
-      dest /= gK;
+    while( stage < ( SimContext::get().SimContext::get().gN - 1 ) ) {
+      dest /= SimContext::get().gK;
       ++stage;
     }
 
-    out_port = dest % gK;
+    out_port = dest % SimContext::get().gK;
   }
 
   outputs->Clear( );
@@ -1856,10 +1856,10 @@ void chaos_torus( const Router *r, const Flit *f,
   int dest = f->dest;
   
   if ( cur != dest ) {
-    for ( int n = 0; n < gN; ++n ) {
+    for ( int n = 0; n < SimContext::get().gN; ++n ) {
 
-      if ( ( cur % gK ) != ( dest % gK ) ) { 
-	int dist2 = gK - 2 * ( ( ( dest % gK ) - ( cur % gK ) + gK ) % gK );
+      if ( ( cur % SimContext::get().gK ) != ( dest % SimContext::get().gK ) ) { 
+	int dist2 = SimContext::get().gK - 2 * ( ( ( dest % SimContext::get().gK ) - ( cur % SimContext::get().gK ) + SimContext::get().gK ) % SimContext::get().gK );
       
 	if ( dist2 >= 0 ) {
 	  outputs->AddRange( 2*n, 0, 0 ); // Right
@@ -1870,11 +1870,11 @@ void chaos_torus( const Router *r, const Flit *f,
 	}
       }
 
-      cur  /= gK;
-      dest /= gK;
+      cur  /= SimContext::get().gK;
+      dest /= SimContext::get().gK;
     }
   } else {
-    outputs->AddRange( 2*gN, 0, 0 ); 
+    outputs->AddRange( 2*SimContext::get().gN, 0, 0 ); 
   }
 }
 
@@ -1895,20 +1895,20 @@ void chaos_mesh( const Router *r, const Flit *f,
   int dest = f->dest;
   
   if ( cur != dest ) {
-    for ( int n = 0; n < gN; ++n ) {
-      if ( ( cur % gK ) != ( dest % gK ) ) { 
+    for ( int n = 0; n < SimContext::get().gN; ++n ) {
+      if ( ( cur % SimContext::get().gK ) != ( dest % SimContext::get().gK ) ) { 
 	// Add minimal direction in dimension 'n'
-	if ( ( cur % gK ) < ( dest % gK ) ) { // Right
+	if ( ( cur % SimContext::get().gK ) < ( dest % SimContext::get().gK ) ) { // Right
 	  outputs->AddRange( 2*n, 0, 0 ); 
 	} else { // Left
 	  outputs->AddRange( 2*n + 1, 0, 0 ); 
 	}
       }
-      cur  /= gK;
-      dest /= gK;
+      cur  /= SimContext::get().gK;
+      dest /= SimContext::get().gK;
     }
   } else {
-    outputs->AddRange( 2*gN, 0, 0 ); 
+    outputs->AddRange( 2*SimContext::get().gN, 0, 0 ); 
   }
 }
 

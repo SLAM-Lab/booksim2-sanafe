@@ -354,7 +354,7 @@ void EventRouter::_IncomingFlits( )
       }
       
       if ( f->watch ) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		    << "Received flit at " << FullName() << ".  Output port = " 
 		    << cur_buf->GetOutputPort( vc ) << ", output VC = " 
 		    << cur_buf->GetOutputVC( vc ) << endl
@@ -678,7 +678,7 @@ void EventRouter::_TransportArb( int input )
     _credit_pipe->Write( c, input );
     
     if ( f->watch && c->tail ) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		  << FullName() << " sending tail credit back for flit " << f->id << endl;
     }
 
@@ -689,7 +689,7 @@ void EventRouter::_TransportArb( int input )
     _crossbar_pipe->Write( f, output );
 
     if ( f->watch ) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		  << "Forwarding flit through crossbar at " << FullName() << ":" << endl
 		  << *f;
     }  

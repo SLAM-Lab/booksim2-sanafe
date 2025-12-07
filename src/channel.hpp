@@ -100,7 +100,7 @@ T * Channel<T>::Receive() {
 template<typename T>
 void Channel<T>::ReadInputs() {
   if(_input) {
-    _wait_queue.push(make_pair(GetSimTime() + _delay - 1, _input));
+    _wait_queue.push(make_pair(SimContext::get().getSimTime() + _delay - 1, _input));
     _input = 0;
   }
 }
@@ -114,10 +114,10 @@ void Channel<T>::WriteOutputs() {
 
   pair<int, T *> const & item = _wait_queue.front();
   int const & time = item.first;
-  if(GetSimTime() < time) {
+  if(SimContext::get().getSimTime() < time) {
     return;
   }
-  assert(GetSimTime() == time);
+  assert(SimContext::get().getSimTime() == time);
   _output = item.second;
   assert(_output);
   _wait_queue.pop();

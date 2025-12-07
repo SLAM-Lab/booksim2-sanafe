@@ -193,7 +193,7 @@ IQRouter::IQRouter( Configuration const & config, Module *parent,
 IQRouter::~IQRouter( )
 {
 
-  if(gPrintActivity) {
+  if(SimContext::get().gPrintActivity) {
     cout << Name() << ".bufferMonitor:" << endl ; 
     cout << *_bufferMonitor << endl ;
     
@@ -318,7 +318,7 @@ bool IQRouter::_ReceiveFlits( )
 #endif
 
       if(f->watch) {
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+        *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
         << "Received flit " << f->id
         << " from channel at input " << input
         << "." << endl;
@@ -338,7 +338,7 @@ bool IQRouter::_ReceiveCredits( )
   //for(size_t output = 0; output < _output_credits.size(); ++output) {  
     Credit * const c = _output_credits[output]->Receive();
     if(c) {
-      _proc_credits.push_back(make_pair(GetSimTime() + _credit_delay, 
+      _proc_credits.push_back(make_pair(SimContext::get().getSimTime() + _credit_delay, 
 					make_pair(c, output)));
       activity = true;
     }
@@ -371,18 +371,18 @@ void IQRouter::_InputQueuing( )
     INFO("flit fid:%d received at router:%d on VC:%d at input:%d \n",
         f->pid, GetID(), vc, input);
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Adding flit " << f->id
 		 << " to VC " << vc
 		 << " at input " << input
 		 << " (state: " << VC::VCSTATE[cur_buf->GetState(vc)];
       if(cur_buf->Empty(vc)) {
-	*gWatchOut << ", empty";
+	*SimContext::get().gWatchOut << ", empty";
       } else {
 	assert(cur_buf->FrontFlit(vc));
-	*gWatchOut << ", front: " << cur_buf->FrontFlit(vc)->id;
+	*SimContext::get().gWatchOut << ", front: " << cur_buf->FrontFlit(vc)->id;
       }
-      *gWatchOut << ")." << endl;
+      *SimContext::get().gWatchOut << ")." << endl;
     }
     cur_buf->AddFlit(vc, f);
 
@@ -403,7 +403,7 @@ void IQRouter::_InputQueuing( )
 	_route_vcs.push_back(make_pair(-1, make_pair(input, vc)));
       } else {
 	if(f->watch) {
-	  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		     << "Using precomputed lookahead routing information for VC " << vc
 		     << " at input " << input
 		     << " (front: " << f->id
@@ -441,7 +441,7 @@ void IQRouter::_InputQueuing( )
     pair<int, pair<Credit *, int> > const & item = _proc_credits.front();
 
     int const time = item.first;
-    if(GetSimTime() < time) {
+    if(SimContext::get().getSimTime() < time) {
       break;
     }
 
@@ -487,7 +487,7 @@ void IQRouter::_RouteEvaluate( )
     if(time >= 0) {
       break;
     }
-    iter->first = GetSimTime() + _routing_delay - 1;
+    iter->first = SimContext::get().getSimTime() + _routing_delay - 1;
     
     int const input = iter->second.first;
     assert((input >= 0) && (input < _inputs));
@@ -504,7 +504,7 @@ void IQRouter::_RouteEvaluate( )
     assert(f->head);
 
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Beginning routing for VC " << vc
 		 << " at input " << input
 		 << " (front: " << f->id
@@ -522,10 +522,10 @@ void IQRouter::_RouteUpdate( )
     pair<int, pair<int, int> > const & item = _route_vcs.front();
 
     int const time = item.first;
-    if((time < 0) || (GetSimTime() < time)) {
+    if((time < 0) || (SimContext::get().getSimTime() < time)) {
       break;
     }
-    assert(GetSimTime() == time);
+    assert(SimContext::get().getSimTime() == time);
 
     int const input = item.second.first;
     assert((input >= 0) && (input < _inputs));
@@ -542,7 +542,7 @@ void IQRouter::_RouteUpdate( )
     assert(f->head);
 
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Completed routing for VC " << vc
 		 << " at input " << input
 		 << " (front: " << f->id
@@ -599,7 +599,7 @@ void IQRouter::_VCAllocEvaluate( )
     assert(f->head);
 
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | " 
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | " 
 		 << "Beginning VC allocation for VC " << vc
 		 << " at input " << input
 		 << " (front: " << f->id
@@ -662,24 +662,24 @@ void IQRouter::_VCAllocEvaluate( )
 	    int const use_input_and_vc = dest_buf->UsedBy(out_vc);
 	    int const use_input = use_input_and_vc / _vcs;
 	    int const use_vc = use_input_and_vc % _vcs;
-	    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		       << "  VC " << out_vc 
 		       << " at output " << out_port 
 		       << " is in use by VC " << use_vc
 		       << " at input " << use_input;
 	    Flit * cf = _buf[use_input]->FrontFlit(use_vc);
 	    if(cf) {
-	      *gWatchOut << " (front flit: " << cf->id << ")";
+	      *SimContext::get().gWatchOut << " (front flit: " << cf->id << ")";
 	    } else {
-	      *gWatchOut << " (empty)";
+	      *SimContext::get().gWatchOut << " (empty)";
 	    }
-	    *gWatchOut << "." << endl;
+	    *SimContext::get().gWatchOut << "." << endl;
 	  }
 	} else {
 	  elig = true;
 	  if(_vc_busy_when_full && dest_buf->IsFullFor(out_vc)) {
 	    if(f->watch)
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "  VC " << out_vc 
 			 << " at output " << out_port 
 			 << " is full." << endl;
@@ -687,7 +687,7 @@ void IQRouter::_VCAllocEvaluate( )
 	  } else {
 	    cred = true;
 	    if(f->watch){
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "  Requesting VC " << out_vc
 			 << " at output " << out_port 
 			 << " (in_pri: " << in_priority
@@ -711,15 +711,15 @@ void IQRouter::_VCAllocEvaluate( )
   }
 
   if(watched) {
-    *gWatchOut << GetSimTime() << " | " << _vc_allocator->FullName() << " | ";
-    _vc_allocator->PrintRequests( gWatchOut );
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << _vc_allocator->FullName() << " | ";
+    _vc_allocator->PrintRequests( SimContext::get().gWatchOut );
   }
 
   _vc_allocator->Allocate();
 
   if(watched) {
-    *gWatchOut << GetSimTime() << " | " << _vc_allocator->FullName() << " | ";
-    _vc_allocator->PrintGrants( gWatchOut );
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << _vc_allocator->FullName() << " | ";
+    _vc_allocator->PrintGrants( SimContext::get().gWatchOut );
   }
 
   for(deque<pair<int, pair<pair<int, int>, int> > >::iterator iter = _vc_alloc_vcs.begin();
@@ -730,7 +730,7 @@ void IQRouter::_VCAllocEvaluate( )
     if(time >= 0) {
       break;
     }
-    iter->first = GetSimTime() + _vc_alloc_delay - 1;
+    iter->first = SimContext::get().getSimTime() + _vc_alloc_delay - 1;
 
     int const input = iter->second.first.first;
     assert((input >= 0) && (input < _inputs));
@@ -764,7 +764,7 @@ void IQRouter::_VCAllocEvaluate( )
       assert((match_vc >= 0) && (match_vc < _vcs));
 
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "Assigning VC " << match_vc
 		   << " at output " << match_output 
 		   << " to VC " << vc
@@ -777,7 +777,7 @@ void IQRouter::_VCAllocEvaluate( )
     } else {
 
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "VC allocation failed for VC " << vc
 		   << " at input " << input
 		   << "." << endl;
@@ -798,7 +798,7 @@ void IQRouter::_VCAllocEvaluate( )
     
     int const time = iter->first;
     assert(time >= 0);
-    if(GetSimTime() < time) {
+    if(SimContext::get().getSimTime() < time) {
       break;
     }
     
@@ -831,7 +831,7 @@ void IQRouter::_VCAllocEvaluate( )
       
       if(!dest_buf->IsAvailableFor(match_vc)) {
 	if(f->watch) {
-	  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		     << "  Discarding previously generated grant for VC " << vc
 		     << " at input " << input
 		     << ": VC " << match_vc
@@ -841,7 +841,7 @@ void IQRouter::_VCAllocEvaluate( )
 	iter->second.second = STALL_BUFFER_BUSY;
       } else if(_vc_busy_when_full && dest_buf->IsFullFor(match_vc)) {
 	if(f->watch) {
-	  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		     << "  Discarding previously generated grant for VC " << vc
 		     << " at input " << input
 		     << ": VC " << match_vc
@@ -863,10 +863,10 @@ void IQRouter::_VCAllocUpdate( )
     pair<int, pair<pair<int, int>, int> > const & item = _vc_alloc_vcs.front();
 
     int const time = item.first;
-    if((time < 0) || (GetSimTime() < time)) {
+    if((time < 0) || (SimContext::get().getSimTime() < time)) {
       break;
     }
-    assert(GetSimTime() == time);
+    assert(SimContext::get().getSimTime() == time);
 
     int const input = item.second.first.first;
     assert((input >= 0) && (input < _inputs));
@@ -885,7 +885,7 @@ void IQRouter::_VCAllocUpdate( )
     assert(f->head);
     
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Completed VC allocation for VC " << vc
 		 << " at input " << input
 		 << " (front: " << f->id
@@ -902,7 +902,7 @@ void IQRouter::_VCAllocUpdate( )
       assert((match_vc >= 0) && (match_vc < _vcs));
       
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "  Acquiring assigned VC " << match_vc
 		   << " at output " << match_output
 		   << "." << endl;
@@ -920,7 +920,7 @@ void IQRouter::_VCAllocUpdate( )
       }
     } else {
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "  No output VC allocated." << endl;
       }
 
@@ -957,7 +957,7 @@ void IQRouter::_SWHoldEvaluate( )
     if(time >= 0) {
       break;
     }
-    iter->first = GetSimTime();
+    iter->first = SimContext::get().getSimTime();
     
     int const input = iter->second.first.first;
     assert((input >= 0) && (input < _inputs));
@@ -975,7 +975,7 @@ void IQRouter::_SWHoldEvaluate( )
     assert(f->vc == vc);
 
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | " 
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | " 
 		 << "Beginning held switch allocation for VC " << vc
 		 << " at input " << input
 		 << " (front: " << f->id
@@ -997,7 +997,7 @@ void IQRouter::_SWHoldEvaluate( )
     
     if(dest_buf->IsFullFor(match_vc)) {
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "  Unable to reuse held connection from input " << input
 		   << "." << (expanded_input % _input_speedup)
 		   << " to output " << match_port
@@ -1007,7 +1007,7 @@ void IQRouter::_SWHoldEvaluate( )
       iter->second.second = dest_buf->IsFull() ? STALL_BUFFER_FULL : STALL_BUFFER_RESERVED;
     } else {
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "  Reusing held connection from input " << input
 		   << "." << (expanded_input % _input_speedup)
 		   << " to output " << match_port
@@ -1031,7 +1031,7 @@ void IQRouter::_SWHoldUpdate( )
     if(time < 0) {
       break;
     }
-    assert(GetSimTime() == time);
+    assert(SimContext::get().getSimTime() == time);
     
     int const input = item.second.first.first;
     assert((input >= 0) && (input < _inputs));
@@ -1049,7 +1049,7 @@ void IQRouter::_SWHoldUpdate( )
     assert(f->vc == vc);
 
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Completed held switch allocation for VC " << vc
 		 << " at input " << input
 		 << " (front: " << f->id
@@ -1076,7 +1076,7 @@ void IQRouter::_SWHoldUpdate( )
       BufferState * const dest_buf = _next_buf[output];
       
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "  Scheduling switch connection from input " << input
 		   << "." << (vc % _input_speedup)
 		   << " to output " << output
@@ -1102,7 +1102,7 @@ void IQRouter::_SWHoldUpdate( )
 	if(router) {
 	  if(_noq) {
 	    if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Updating lookahead routing information for flit " << f->id
 			 << " (NOQ)." << endl;
 	    }
@@ -1119,7 +1119,7 @@ void IQRouter::_SWHoldUpdate( )
 	    f->la_route_set.AddRange(next_output_port, next_vc_start, next_vc_end);
 	  } else {
 	    if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Updating lookahead routing information for flit " << f->id
 			 << "." << endl;
 	    }
@@ -1147,7 +1147,7 @@ void IQRouter::_SWHoldUpdate( )
       
       if(cur_buf->Empty(vc)) {
 	if(f->watch) {
-	  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		     << "  Cancelling held connection from input " << input
 		     << "." << (expanded_input % _input_speedup)
 		     << " to " << output
@@ -1167,7 +1167,7 @@ void IQRouter::_SWHoldUpdate( )
 	if(f->tail) {
 	  assert(nf->head);
 	  if(f->watch) {
-	    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		       << "  Cancelling held connection from input " << input
 		       << "." << (expanded_input % _input_speedup)
 		       << " to " << output
@@ -1182,7 +1182,7 @@ void IQRouter::_SWHoldUpdate( )
 	    _route_vcs.push_back(make_pair(-1, item.second.first));
 	  } else {
 	    if(nf->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Using precomputed lookahead routing information for VC " << vc
 			 << " at input " << input
 			 << " (front: " << nf->id
@@ -1216,7 +1216,7 @@ void IQRouter::_SWHoldUpdate( )
       assert(held_expanded_output >= 0);
       
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "  Cancelling held connection from input " << input
 		   << "." << (expanded_input % _input_speedup)
 		   << " to " << (held_expanded_output / _output_speedup)
@@ -1281,7 +1281,7 @@ bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
       if(RoundRobinArbiter::Supersedes(vc, prio, req.label, req.in_pri, 
 				       _sw_rr_offset[expanded_input], _vcs)) {
 	if(f->watch) {
-	  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		     << "  Replacing earlier request from VC " << req.label
 		     << " for output " << output 
 		     << "." << (expanded_output % _output_speedup)
@@ -1297,7 +1297,7 @@ bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
 	return true;
       }
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "  Output " << output
 		   << "." << (expanded_output % _output_speedup)
 		   << " was already requested by VC " << req.label
@@ -1308,7 +1308,7 @@ bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
       return false;
     }
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "  Requesting output " << output
 		 << "." << (expanded_output % _output_speedup)
 		 << " (" << ((cur_buf->GetState(vc) == VC::active) ? 
@@ -1321,30 +1321,30 @@ bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
     return true;
   }
   if(f->watch) {
-    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 	       << "  Ignoring output " << output
 	       << "." << (expanded_output % _output_speedup)
 	       << " due to switch hold (";
     if(_switch_hold_in[expanded_input] >= 0) {
-      *gWatchOut << "input: " << input
+      *SimContext::get().gWatchOut << "input: " << input
 		 << "." << (expanded_input % _input_speedup);
       if(_switch_hold_out[expanded_output] >= 0) {
-	*gWatchOut << ", ";
+	*SimContext::get().gWatchOut << ", ";
       }
     }
     if(_switch_hold_out[expanded_output] >= 0) {
-      *gWatchOut << "output: " << output
+      *SimContext::get().gWatchOut << "output: " << output
 		 << "." << (expanded_output % _output_speedup);
     }
-    *gWatchOut << ")." << endl;
+    *SimContext::get().gWatchOut << ")." << endl;
   }
   return false;
 }
 
 bool IQRouter::_rxBusy( ) const
 {
-  for (size_t i = 0; i < gReceiverBusyCycles.size(); ++i) {
-    if (gReceiverBusyCycles[i] > 0) {
+  for (size_t i = 0; i < SimContext::get().gReceiverBusyCycles.size(); ++i) {
+    if (SimContext::get().gReceiverBusyCycles[i] > 0) {
       return true;
     }
   }
@@ -1385,7 +1385,7 @@ void IQRouter::_SWAllocEvaluate( )
 	  INFO("beginning switch allocation for vc:%d input:%d front fid:%d\n",
         vc, input, f->pid);
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
         << "Beginning switch allocation for VC " << vc
         << " at input " << input
         << " (front: " << f->id
@@ -1402,18 +1402,18 @@ void IQRouter::_SWAllocEvaluate( )
       INFO("flit fid:%d output:%d has %d processing cycles\n", f->pid, dest_output, f->processing_cycles);
       bool send_blocked = dest_buf->IsFullFor(dest_vc) || ( _output_buffer_size!=-1  && _output_buffer[dest_output].size()>=(size_t)(_output_buffer_size));
       // Only check receiver status if this is an ejection port (going to a core)
-      if(dest_output < gC) {  // Assuming ejection ports are the first "c" ports
+      if(dest_output < SimContext::get().gC) {  // Assuming ejection ports are the first "c" ports
         // TODO: calculate the nodes this router position is associated with
-        int core_id = (_id*gC) + dest_output;  // Convert output port to core ID
-        INFO("id:%d gC:%d dest_output:%d core_id:%d\n", _id, gC, dest_output, core_id);
-          //send_blocked |= (gReceiverBusyCycles[core_id] > 0);
-          send_blocked |= (gReceiverBuffers[core_id].size() >= (size_t) _vc_buf_size);
+        int core_id = (_id*SimContext::get().gC) + dest_output;  // Convert output port to core ID
+        INFO("id:%d gC:%d dest_output:%d core_id:%d\n", _id, SimContext::get().gC, dest_output, core_id);
+          //send_blocked |= (SimContext::get().gReceiverBusyCycles[core_id] > 0);
+          send_blocked |= (SimContext::get().gReceiverBuffers[core_id].size() >= (size_t) _vc_buf_size);
       }
       if(send_blocked) {
 
         INFO("Router:%d fid:%d VC:%d at output:%d is full/busy\n", GetID(), f->pid, dest_vc, dest_output);
         if(f->watch) {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
               << "  VC " << dest_vc
               << " at output " << dest_output
               << " is full." << endl;
@@ -1486,14 +1486,14 @@ void IQRouter::_SWAllocEvaluate( )
 
       if(_spec_check_elig && !elig) {
         if(f->watch) {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
               << "  Output " << dest_output
               << " has no suitable VCs available." << endl;
 	      }
 	      iter->second.second = STALL_BUFFER_BUSY;
       } else if(_spec_check_cred && !cred) {
         if(f->watch) {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
               << "  All suitable VCs at output " << dest_output
               << " are full." << endl;
         }
@@ -1506,11 +1506,11 @@ void IQRouter::_SWAllocEvaluate( )
   }
 
   if(watched) {
-    *gWatchOut << GetSimTime() << " | " << _sw_allocator->FullName() << " | ";
-    _sw_allocator->PrintRequests(gWatchOut);
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << _sw_allocator->FullName() << " | ";
+    _sw_allocator->PrintRequests(SimContext::get().gWatchOut);
     if(_spec_sw_allocator) {
-      *gWatchOut << GetSimTime() << " | " << _spec_sw_allocator->FullName() << " | ";
-      _spec_sw_allocator->PrintRequests(gWatchOut);
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << _spec_sw_allocator->FullName() << " | ";
+      _spec_sw_allocator->PrintRequests(SimContext::get().gWatchOut);
     }
   }
   
@@ -1519,11 +1519,11 @@ void IQRouter::_SWAllocEvaluate( )
     _spec_sw_allocator->Allocate();
 
   if(watched) {
-    *gWatchOut << GetSimTime() << " | " << _sw_allocator->FullName() << " | ";
-    _sw_allocator->PrintGrants(gWatchOut);
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << _sw_allocator->FullName() << " | ";
+    _sw_allocator->PrintGrants(SimContext::get().gWatchOut);
     if(_spec_sw_allocator) {
-      *gWatchOut << GetSimTime() << " | " << _spec_sw_allocator->FullName() << " | ";
-      _spec_sw_allocator->PrintGrants(gWatchOut);
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << _spec_sw_allocator->FullName() << " | ";
+      _spec_sw_allocator->PrintGrants(SimContext::get().gWatchOut);
     }
   }
 
@@ -1535,7 +1535,7 @@ void IQRouter::_SWAllocEvaluate( )
     if(time >= 0) {
       break;
     }
-    iter->first = GetSimTime() + _sw_alloc_delay - 1;
+    iter->first = SimContext::get().getSimTime() + _sw_alloc_delay - 1;
 
     int const input = iter->second.first.first;
     assert((input >= 0) && (input < _inputs));
@@ -1570,7 +1570,7 @@ void IQRouter::_SWAllocEvaluate( )
 
 
         if(f->watch) {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
               << "Assigning output " << (expanded_output / _output_speedup)
               << "." << (expanded_output % _output_speedup)
               << " to VC " << vc
@@ -1582,7 +1582,7 @@ void IQRouter::_SWAllocEvaluate( )
         iter->second.second = expanded_output;
       } else {
         if(f->watch) {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
               << "Switch allocation failed for VC " << vc
               << " at input " << input
               << ": Granted to VC " << granted_vc << "." << endl;
@@ -1596,7 +1596,7 @@ void IQRouter::_SWAllocEvaluate( )
         if(_spec_mask_by_reqs && 
           _sw_allocator->OutputHasRequests(expanded_output)) {
           if(f->watch) {
-            *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+            *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
                 << "Discarding speculative grant for VC " << vc
                 << " at input " << input
                 << "." << (vc % _input_speedup)
@@ -1608,7 +1608,7 @@ void IQRouter::_SWAllocEvaluate( )
 	      } else if(!_spec_mask_by_reqs &&
 		      (_sw_allocator->InputAssigned(expanded_output) >= 0)) {
           if(f->watch) {
-            *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+            *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
                 << "Discarding speculative grant for VC " << vc
                 << " at input " << input
                 << "." << (vc % _input_speedup)
@@ -1622,7 +1622,7 @@ void IQRouter::_SWAllocEvaluate( )
                   expanded_output);
           if(granted_vc == vc) {
             if(f->watch) {
-              *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+              *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
             << "Assigning output " << (expanded_output / _output_speedup)
             << "." << (expanded_output % _output_speedup)
             << " to VC " << vc
@@ -1634,7 +1634,7 @@ void IQRouter::_SWAllocEvaluate( )
             iter->second.second = expanded_output;
           } else {
             if(f->watch) {
-              *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+              *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
             << "Switch allocation failed for VC " << vc
             << " at input " << input
             << ": Granted to VC " << granted_vc << "." << endl;
@@ -1645,7 +1645,7 @@ void IQRouter::_SWAllocEvaluate( )
       } else {
         INFO("Discarding grant from input %d no output granted\n", input);
         if(f->watch) {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
               << "Switch allocation failed for VC " << vc
               << " at input " << input
               << ": No output granted." << endl;
@@ -1655,7 +1655,7 @@ void IQRouter::_SWAllocEvaluate( )
     } else {
 	    INFO("Discarding grant from input %d no output granted\n", input);
       if(f->watch) {
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+        *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
           << "Switch allocation failed for VC " << vc
           << " at input " << input
           << ": No output granted." << endl;
@@ -1673,7 +1673,7 @@ void IQRouter::_SWAllocEvaluate( )
 
     int const time = iter->first;
     assert(time >= 0);
-    if(GetSimTime() < time) {
+    if(SimContext::get().getSimTime() < time) {
       break;
     }
 
@@ -1710,23 +1710,23 @@ void IQRouter::_SWAllocEvaluate( )
 	 (_switch_hold_out[expanded_output] >= 0)) {
 	INFO("Discarding grant from input %d to output %d due to conflict with held connection\n", input, output);
   if(f->watch) {
-	  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		     << "Discarding grant from input " << input
 		     << "." << (vc % _input_speedup)
 		     << " to output " << output
 		     << "." << (expanded_output % _output_speedup)
 		     << " due to conflict with held connection at ";
 	  if(_switch_hold_in[expanded_input] >= 0) {
-	    *gWatchOut << "input";
+	    *SimContext::get().gWatchOut << "input";
 	  }
 	  if((_switch_hold_in[expanded_input] >= 0) && 
 	     (_switch_hold_out[expanded_output] >= 0)) {
-	    *gWatchOut << " and ";
+	    *SimContext::get().gWatchOut << " and ";
 	  }
 	  if(_switch_hold_out[expanded_output] >= 0) {
-	    *gWatchOut << "output";
+	    *SimContext::get().gWatchOut << "output";
 	  }
-	  *gWatchOut << "." << endl;
+	  *SimContext::get().gWatchOut << "." << endl;
 	}
 	iter->second.second = STALL_CROSSBAR_CONFLICT;
       } else if(_speculative && (cur_buf->GetState(vc) == VC::vc_alloc)) {
@@ -1742,7 +1742,7 @@ void IQRouter::_SWAllocEvaluate( )
 	  if(output_and_vc < 0) {
 	    INFO("Discarding grant from input %d to output %d due to mispeculation\n", input, output);
       if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Discarding grant from input " << input
 			 << "." << (vc % _input_speedup)
 			 << " to output " << output
@@ -1752,7 +1752,7 @@ void IQRouter::_SWAllocEvaluate( )
 	    iter->second.second = -1; // stall is counted in VC allocation path!
 	  } else if((output_and_vc / _vcs) != output) {
 	    if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Discarding grant from input " << input
 			 << "." << (vc % _input_speedup)
 			 << " to output " << output
@@ -1763,7 +1763,7 @@ void IQRouter::_SWAllocEvaluate( )
 	  } else if(dest_buf->IsFullFor((output_and_vc % _vcs))) {
 	    INFO("Discarding grant from input %d to output %d due to lack of credit\n", input, output);
       if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Discarding grant from input " << input
 			 << "." << (vc % _input_speedup)
 			 << " to output " << output
@@ -1826,7 +1826,7 @@ void IQRouter::_SWAllocEvaluate( )
 
 	  if(busy) {
 	    if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Discarding grant from input " << input
 			 << "." << (vc % _input_speedup)
 			 << " to output " << output
@@ -1837,7 +1837,7 @@ void IQRouter::_SWAllocEvaluate( )
 	  } else if(full) {
 	    INFO("Discarding grant from input %d because all suitable output VCs for piggyback allocation are full\n", input);
       if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Discarding grant from input " << input
 			 << "." << (vc % _input_speedup)
 			 << " to output " << output
@@ -1858,7 +1858,7 @@ void IQRouter::_SWAllocEvaluate( )
 	if(dest_buf->IsFullFor(match_vc)) {
 	  INFO("Discarding grant from input %d due to lack of credit\n", input);
     if(f->watch) {
-	    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		       << "  Discarding grant from input " << input
 		       << "." << (vc % _input_speedup)
 		       << " to output " << output
@@ -1879,10 +1879,10 @@ void IQRouter::_SWAllocUpdate( )
     pair<int, pair<pair<int, int>, int> > const & item = _sw_alloc_vcs.front();
 
     int const time = item.first;
-    if((time < 0) || (GetSimTime() < time)) {
+    if((time < 0) || (SimContext::get().getSimTime() < time)) {
       break;
     }
-    assert(GetSimTime() == time);
+    assert(SimContext::get().getSimTime() == time);
 
     int const input = item.second.first.first;
     assert((input >= 0) && (input < _inputs));
@@ -1899,7 +1899,7 @@ void IQRouter::_SWAllocUpdate( )
     assert(f->vc == vc);
 
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Completed switch allocation for VC " << vc
 		 << " at input " << input
 		 << " (front: " << f->id
@@ -1987,7 +1987,7 @@ void IQRouter::_SWAllocUpdate( )
 	assert(match_vc >= 0);
 
 	if(f->watch) {
-	  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		     << "  Allocating VC " << match_vc
 		     << " at output " << output
 		     << " via piggyback VC allocation." << endl;
@@ -2009,7 +2009,7 @@ void IQRouter::_SWAllocUpdate( )
       assert((match_vc >= 0) && (match_vc < _vcs));
 
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "  Scheduling switch connection from input " << input
 		   << "." << (vc % _input_speedup)
 		   << " to output " << output
@@ -2035,7 +2035,7 @@ void IQRouter::_SWAllocUpdate( )
 	if(router) {
 	  if(_noq) {
 	    if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Updating lookahead routing information for flit " << f->id
 			 << " (NOQ)." << endl;
 	    }
@@ -2052,7 +2052,7 @@ void IQRouter::_SWAllocUpdate( )
 	    f->la_route_set.AddRange(next_output_port, next_vc_start, next_vc_end);
 	  } else {
 	    if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Updating lookahead routing information for flit " << f->id
 			 << "." << endl;
 	    }
@@ -2094,7 +2094,7 @@ void IQRouter::_SWAllocUpdate( )
 	    _route_vcs.push_back(make_pair(-1, item.second.first));
 	  } else {
 	    if(nf->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Using precomputed lookahead routing information for VC " << vc
 			 << " at input " << input
 			 << " (front: " << nf->id
@@ -2117,7 +2117,7 @@ void IQRouter::_SWAllocUpdate( )
 	} else {
 	  if(_hold_switch_for_packet) {
 	    if(f->watch) {
-	      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 			 << "Setting up switch hold for VC " << vc
 			 << " at input " << input
 			 << "." << (expanded_input % _input_speedup)
@@ -2138,7 +2138,7 @@ void IQRouter::_SWAllocUpdate( )
       }
     } else {
       if(f->watch) {
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		   << "  No output port allocated." << endl;
       }
       INFO("no output port allocated for fid:%d\n", f->pid);
@@ -2184,7 +2184,7 @@ void IQRouter::_SwitchEvaluate( )
     if(time >= 0) {
       break;
     }
-    iter->first = GetSimTime() + _crossbar_delay - 1;
+    iter->first = SimContext::get().getSimTime() + _crossbar_delay - 1;
 
     Flit const * const f = iter->second.first;
     assert(f);
@@ -2193,7 +2193,7 @@ void IQRouter::_SwitchEvaluate( )
     int const expanded_output = iter->second.second.second;
       
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Beginning crossbar traversal for flit " << f->id
 		 << " from input " << (expanded_input / _input_speedup)
 		 << "." << (expanded_input % _input_speedup)
@@ -2213,10 +2213,10 @@ void IQRouter::_SwitchUpdate( )
     pair<int, pair<Flit *, pair<int, int> > > const & item = _crossbar_flits.front();
 
     int const time = item.first;
-    if((time < 0) || (GetSimTime() < time)) {
+    if((time < 0) || (SimContext::get().getSimTime() < time)) {
       break;
     }
-    assert(GetSimTime() == time);
+    assert(SimContext::get().getSimTime() == time);
 
     Flit * const f = item.second.first;
     assert(f);
@@ -2229,7 +2229,7 @@ void IQRouter::_SwitchUpdate( )
     assert((output >= 0) && (output < _outputs));
 
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Completed crossbar traversal for flit " << f->id
 		 << " from input " << input
 		 << "." << (expanded_input % _input_speedup)
@@ -2239,23 +2239,23 @@ void IQRouter::_SwitchUpdate( )
     }
     INFO("flit fid:%d at router:%d finished crossbar traversal\n",
         f->pid, GetID());
-    if (output < gC) {
-      int core_id = (_id*gC) + output;
-      if (gReceiverBusyCycles[core_id] > 0) {
-        gReceiverBuffers[core_id].push_back({f->id, f->processing_cycles});
+    if (output < SimContext::get().gC) {
+      int core_id = (_id*SimContext::get().gC) + output;
+      if (SimContext::get().gReceiverBusyCycles[core_id] > 0) {
+        SimContext::get().gReceiverBuffers[core_id].push_back({f->id, f->processing_cycles});
         INFO("fid:%d core:%d busy receiving, pushing into buffer (size:%zu)\n",
           f->id, core_id, gReceiverBuffers[core_id].size());
       } else {
-        gReceiverBusyCycles[core_id] = f->processing_cycles;
+        SimContext::get().gReceiverBusyCycles[core_id] = f->processing_cycles;
         INFO("fid:%d core:%d setting rx busy for %d cycles\n",
-            f->pid, core_id, gReceiverBusyCycles[core_id]);
+            f->pid, core_id, SimContext::get().gReceiverBusyCycles[core_id]);
       }
     }
 
     _switchMonitor->traversal(input, output, f) ;
 
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Buffering flit " << f->id
 		 << " at output " << output
 		 << "." << endl;
@@ -2311,11 +2311,11 @@ void IQRouter::_SendFlits( )
 #endif
 
       if(f->watch)
-	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+	*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		    << "Sending flit " << f->id
 		    << " to channel at output " << output
 		    << "." << endl;
-      if(gTrace) {
+      if(SimContext::get().gTrace) {
 	cout << "Outport " << output << endl << "Stop Mark" << endl;
       }
       INFO("Sending flit fid:%d at router:%d to output:%d\n", f->pid, GetID(), output);
@@ -2440,7 +2440,7 @@ void IQRouter::_UpdateNOQ(int input, int vc, Flit const * f) {
     _noq_next_vc_end[input][vc] = next_vc_end;
     assert(next_vc_start <= next_vc_end);
     if(f->watch) {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 		 << "Computing lookahead routing information for flit " << f->id
 		 << " (NOQ)." << endl;
     }

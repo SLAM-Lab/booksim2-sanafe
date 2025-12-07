@@ -91,9 +91,9 @@ void CMesh::_ComputeSize( const Configuration &config ) {
   _yrouter = config.GetInt("yr");
   //assert(_xrouter == _yrouter); // broken for asymmetric concentration
 
-  gK = _k = k ;
-  gN = _n = n ;
-  gC = _c = c ;
+  SimContext::get().gK = _k = k ;
+  SimContext::get().gN = _n = n ;
+  SimContext::get().gC = _c = c ;
   gXRouter = _xrouter;
   gYRouter = _yrouter;
 
@@ -113,8 +113,8 @@ void CMesh::_ComputeSize( const Configuration &config ) {
 
   //
   _memo_NodeShiftX = _cX >> 1 ;
-  _memo_NodeShiftY = log_two(gK * _cX) + ( _cY >> 1 ) ;
-  _memo_PortShiftY = log_two(gK * _cX)  ;
+  _memo_NodeShiftY = log_two(SimContext::get().gK * _cX) + ( _cY >> 1 ) ;
+  _memo_PortShiftY = log_two(SimContext::get().gK * _cX)  ;
 
 }
 */
@@ -130,11 +130,11 @@ void CMesh::_ComputeSize( const Configuration &config ) {
 
   assert(n <= 2); // broken for n > 2
   assert(c == 4); // broken for c != 4
-  gK = _k = k ;
-  gN = _n = n ;
-  gC = _c = c ;
-  gXCount = _xcount;
-  gYCount = _ycount;
+  SimContext::get().gK = _k = k ;
+  SimContext::get().gN = _n = n ;
+  SimContext::get().gC = _c = c ;
+  SimContext::get().gXCount = _xcount;
+  SimContext::get().gYCount = _ycount;
 
   _cX = _c / _n ;   // Concentration in X Dimension
   _cY = _c / _cX ;  // Concentration in Y Dimension
@@ -157,7 +157,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
   int y_index ;
 
   //standard trace configuration
-  if(gTrace){
+  if(SimContext::get().gTrace){
     cout<<"Setup Finished Router"<<endl;
   }
 
@@ -295,7 +295,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
     _routers[node]->AddOutputChannel( _chan[px_out], _chan_cred[px_out] );
     _routers[node]->AddInputChannel( _chan[px_in], _chan_cred[px_in] );
 
-    if(gTrace) {
+    if(SimContext::get().gTrace) {
       cout<<"Link "<<" "<<px_out<<" "<<px_in<<" "<<node<<" "<<_chan[px_out]->GetLatency()<<endl;
     }
 
@@ -311,7 +311,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
     _routers[node]->AddOutputChannel( _chan[nx_out], _chan_cred[nx_out] );
     _routers[node]->AddInputChannel( _chan[nx_in], _chan_cred[nx_in] );
 
-    if(gTrace){
+    if(SimContext::get().gTrace){
       cout<<"Link "<<" "<<nx_out<<" "<<nx_in<<" "<<node<<" "<<_chan[nx_out]->GetLatency()<<endl;
     }
 
@@ -329,7 +329,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
       _routers[node]->AddInputChannel( _chan[py_in], _chan_cred[py_in] );
     }
 
-    if(gTrace){
+    if(SimContext::get().gTrace){
       cout<<"Link "<<" "<<py_out<<" "<<py_in<<" "<<node<<" "<<_chan[py_out]->GetLatency()<<endl;
     }
 
@@ -347,7 +347,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
       _routers[node]->AddInputChannel( _chan[ny_in], _chan_cred[ny_in] );
     }
 
-    if(gTrace){
+    if(SimContext::get().gTrace){
       cout<<"Link "<<" "<<ny_out<<" "<<ny_in<<" "<<node<<" "<<_chan[ny_out]->GetLatency()<<endl;
     }
 
@@ -358,7 +358,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
     assert( channel_vector[i] == true );
   }
 
-  if(gTrace) {
+  if(SimContext::get().gTrace) {
     cout<<"Setup Finished Link"<<endl;
   }
 }
@@ -371,7 +371,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
   int y_index ;
 
   //standard trace configuration 
-  if(gTrace){
+  if(SimContext::get().gTrace){
     cout<<"Setup Finished Router"<<endl;
   }
 
@@ -554,7 +554,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
     _routers[node]->AddOutputChannel( _chan[px_out], _chan_cred[px_out] );
     _routers[node]->AddInputChannel( _chan[px_in], _chan_cred[px_in] );
 
-    if(gTrace) {
+    if(SimContext::get().gTrace) {
       cout<<"Link "<<" "<<px_out<<" "<<px_in<<" "<<node<<" "<<_chan[px_out]->GetLatency()<<endl;
     }
 
@@ -570,7 +570,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
     _routers[node]->AddOutputChannel( _chan[nx_out], _chan_cred[nx_out] );
     _routers[node]->AddInputChannel( _chan[nx_in], _chan_cred[nx_in] );
 
-    if(gTrace){
+    if(SimContext::get().gTrace){
       cout<<"Link "<<" "<<nx_out<<" "<<nx_in<<" "<<node<<" "<<_chan[nx_out]->GetLatency()<<endl;
     }
 
@@ -588,7 +588,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
       _routers[node]->AddInputChannel( _chan[py_in], _chan_cred[py_in] );
     }
 
-    if(gTrace){
+    if(SimContext::get().gTrace){
       cout<<"Link "<<" "<<py_out<<" "<<py_in<<" "<<node<<" "<<_chan[py_out]->GetLatency()<<endl;
     }
 
@@ -606,7 +606,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
       _routers[node]->AddInputChannel( _chan[ny_in], _chan_cred[ny_in] );
     }
 
-    if(gTrace){
+    if(SimContext::get().gTrace){
       cout<<"Link "<<" "<<ny_out<<" "<<ny_in<<" "<<node<<" "<<_chan[ny_out]->GetLatency()<<endl;
     }
 
@@ -617,7 +617,7 @@ void CMesh::_BuildNet( const Configuration& config ) {
     assert( channel_vector[i] == true );
   }
 
-  if(gTrace) {
+  if(SimContext::get().gTrace) {
     cout<<"Setup Finished Link"<<endl;
   }
 }
@@ -632,9 +632,9 @@ void CMesh::_BuildNet( const Configuration& config ) {
 
 int CMesh::NodeToRouter( int address ) {
 
-  //int y  = (address /  (_cX*gK))/_cY ;
-  //int x  = (address %  (_cX*gK))/_cY ;
-  //int router = y*gK + x ;
+  //int y  = (address /  (_cX*SimContext::get().gK))/_cY ;
+  //int x  = (address %  (_cX*SimContext::get().gK))/_cY ;
+  //int router = y*SimContext::get().gK + x ;
 
    // Calculate which router this node belongs to
   int nodes_per_router = _xrouter * _yrouter;
@@ -645,7 +645,7 @@ int CMesh::NodeToRouter( int address ) {
 
 int CMesh::NodeToPort( int address ) {
 
-  int local_addr = address % gC;
+  int local_addr = address % SimContext::get().gC;
 
   // Calculate local x,y coordinates within router
   int local_x = local_addr % _xrouter;
@@ -658,9 +658,9 @@ int CMesh::NodeToPort( int address ) {
   //const int maskY  = _cY - 1 ;
 
   //int x = address & maskX ;
-  //int y = (int)(address/(2*gK)) & maskY ;
+  //int y = (int)(address/(2*SimContext::get().gK)) & maskY ;
 
-  //return (gC / 2) * y + x;
+  //return (SimContext::get().gC / 2) * y + x;
 }
 
 // ----------------------------------------------------------------------
@@ -677,51 +677,51 @@ int cmesh_xy( int cur, int dest ) {
   const int POSITIVE_Y = 2 ;
   const int NEGATIVE_Y = 3 ;
 
-  int cur_y  = cur / gK;
-  int cur_x  = cur % gK;
-  int dest_y = dest / gK;
-  int dest_x = dest % gK;
+  int cur_y  = cur / SimContext::get().gK;
+  int cur_x  = cur % SimContext::get().gK;
+  int dest_y = dest / SimContext::get().gK;
+  int dest_x = dest % SimContext::get().gK;
 
   // Dimension-order Routing: x , y
   if (cur_x < dest_x) {
     // Express?
     if ((dest_x - cur_x) > 1){
       if (cur_y == 0)
-    	return gC + NEGATIVE_Y ;
-      if (cur_y == (gK-1))
-    	return gC + POSITIVE_Y ;
+    	return SimContext::get().gC + NEGATIVE_Y ;
+      if (cur_y == (SimContext::get().gK-1))
+    	return SimContext::get().gC + POSITIVE_Y ;
     }
-    return gC + POSITIVE_X ;
+    return SimContext::get().gC + POSITIVE_X ;
   }
   if (cur_x > dest_x) {
     // Express ? 
     if ((cur_x - dest_x) > 1){
       if (cur_y == 0)
-    	return gC + NEGATIVE_Y ;
-      if (cur_y == (gK-1))
-    	return gC + POSITIVE_Y ;
+    	return SimContext::get().gC + NEGATIVE_Y ;
+      if (cur_y == (SimContext::get().gK-1))
+    	return SimContext::get().gC + POSITIVE_Y ;
     }
-    return gC + NEGATIVE_X ;
+    return SimContext::get().gC + NEGATIVE_X ;
   }
   if (cur_y < dest_y) {
     // Express?
     if ((dest_y - cur_y) > 1) {
       if (cur_x == 0)
-    	return gC + NEGATIVE_X ;
-      if (cur_x == (gK-1))
-    	return gC + POSITIVE_X ;
+    	return SimContext::get().gC + NEGATIVE_X ;
+      if (cur_x == (SimContext::get().gK-1))
+    	return SimContext::get().gC + POSITIVE_X ;
     }
-    return gC + POSITIVE_Y ;
+    return SimContext::get().gC + POSITIVE_Y ;
   }
   if (cur_y > dest_y) {
     // Express ?
     if ((cur_y - dest_y) > 1 ){
       if (cur_x == 0)
-    	return gC + NEGATIVE_X ;
-      if (cur_x == (gK-1))
-    	return gC + POSITIVE_X ;
+    	return SimContext::get().gC + NEGATIVE_X ;
+      if (cur_x == (SimContext::get().gK-1))
+    	return SimContext::get().gC + POSITIVE_X ;
     }
-    return gC + NEGATIVE_Y ;
+    return SimContext::get().gC + NEGATIVE_Y ;
   }
   return 0;
 }
@@ -733,51 +733,51 @@ int cmesh_yx( int cur, int dest ) {
   const int POSITIVE_Y = 2 ;
   const int NEGATIVE_Y = 3 ;
 
-  int cur_y  = cur / gK ;
-  int cur_x  = cur % gK ;
-  int dest_y = dest / gK ;
-  int dest_x = dest % gK ;
+  int cur_y  = cur / SimContext::get().gK ;
+  int cur_x  = cur % SimContext::get().gK ;
+  int dest_y = dest / SimContext::get().gK ;
+  int dest_x = dest % SimContext::get().gK ;
 
   // Dimension-order Routing: y, x
   if (cur_y < dest_y) {
     // Express?
     if ((dest_y - cur_y) > 1) {
       if (cur_x == 0)
-    	return gC + NEGATIVE_X ;
-      if (cur_x == (gK-1))
-    	return gC + POSITIVE_X ;
+    	return SimContext::get().gC + NEGATIVE_X ;
+      if (cur_x == (SimContext::get().gK-1))
+    	return SimContext::get().gC + POSITIVE_X ;
     }
-    return gC + POSITIVE_Y ;
+    return SimContext::get().gC + POSITIVE_Y ;
   }
   if (cur_y > dest_y) {
     // Express ?
     if ((cur_y - dest_y) > 1 ){
       if (cur_x == 0)
-    	return gC + NEGATIVE_X ;
-      if (cur_x == (gK-1))
-    	return gC + POSITIVE_X ;
+    	return SimContext::get().gC + NEGATIVE_X ;
+      if (cur_x == (SimContext::get().gK-1))
+    	return SimContext::get().gC + POSITIVE_X ;
     }
-    return gC + NEGATIVE_Y ;
+    return SimContext::get().gC + NEGATIVE_Y ;
   }
   if (cur_x < dest_x) {
     // Express?
     if ((dest_x - cur_x) > 1){
       if (cur_y == 0)
-    	return gC + NEGATIVE_Y ;
-      if (cur_y == (gK-1))
-    	return gC + POSITIVE_Y ;
+    	return SimContext::get().gC + NEGATIVE_Y ;
+      if (cur_y == (SimContext::get().gK-1))
+    	return SimContext::get().gC + POSITIVE_Y ;
     }
-    return gC + POSITIVE_X ;
+    return SimContext::get().gC + POSITIVE_X ;
   }
   if (cur_x > dest_x) {
     // Express ? 
     if ((cur_x - dest_x) > 1){
       if (cur_y == 0)
-    	return gC + NEGATIVE_Y ;
-      if (cur_y == (gK-1))
-    	return gC + POSITIVE_Y ;
+    	return SimContext::get().gC + NEGATIVE_Y ;
+      if (cur_y == (SimContext::get().gK-1))
+    	return SimContext::get().gC + POSITIVE_Y ;
     }
-    return gC + NEGATIVE_X ;
+    return SimContext::get().gC + NEGATIVE_X ;
   }
   return 0;
 }
@@ -831,7 +831,7 @@ void xy_yx_cmesh( const Router *r, const Flit *f, int in_channel,
       assert(available_vcs > 0);
 
       // randomly select dimension order at first hop
-      bool x_then_y = ((in_channel < gC) ?
+      bool x_then_y = ((in_channel < SimContext::get().gC) ?
 		       (RandomInt(1) > 0) :
 		       (f->vc < (vcBegin + available_vcs)));
 
@@ -867,27 +867,27 @@ int cmesh_xy_no_express( int cur, int dest ) {
   const int POSITIVE_Y = 2 ;
   const int NEGATIVE_Y = 3 ;
 
-  const int cur_y  = cur  / gK ;
-  const int cur_x  = cur  % gK ;
-  const int dest_y = dest / gK ;
-  const int dest_x = dest % gK ;
+  const int cur_y  = cur  / SimContext::get().gK ;
+  const int cur_x  = cur  % SimContext::get().gK ;
+  const int dest_y = dest / SimContext::get().gK ;
+  const int dest_x = dest % SimContext::get().gK ;
 
 
-  //  Note: channel numbers bellow gC (degree of concentration) are
+  //  Note: channel numbers bellow SimContext::get().gC (degree of concentration) are
   //        injection and ejection links
 
   // Dimension-order Routing: X , Y
   if (cur_x < dest_x) {
-    return gC + POSITIVE_X ;
+    return SimContext::get().gC + POSITIVE_X ;
   }
   if (cur_x > dest_x) {
-    return gC + NEGATIVE_X ;
+    return SimContext::get().gC + NEGATIVE_X ;
   }
   if (cur_y < dest_y) {
-    return gC + POSITIVE_Y ;
+    return SimContext::get().gC + POSITIVE_Y ;
   }
   if (cur_y > dest_y) {
-    return gC + NEGATIVE_Y ;
+    return SimContext::get().gC + NEGATIVE_Y ;
   }
   return 0;
 }
@@ -899,26 +899,26 @@ int cmesh_yx_no_express( int cur, int dest ) {
   const int POSITIVE_Y = 2 ;
   const int NEGATIVE_Y = 3 ;
   
-  const int cur_y  = cur / gK ;
-  const int cur_x  = cur % gK ;
-  const int dest_y = dest / gK ;
-  const int dest_x = dest % gK ;
+  const int cur_y  = cur / SimContext::get().gK ;
+  const int cur_x  = cur % SimContext::get().gK ;
+  const int dest_y = dest / SimContext::get().gK ;
+  const int dest_x = dest % SimContext::get().gK ;
 
-  //  Note: channel numbers bellow gC (degree of concentration) are
+  //  Note: channel numbers bellow SimContext::get().gC (degree of concentration) are
   //        injection and ejection links
 
   // Dimension-order Routing: X , Y
   if (cur_y < dest_y) {
-    return gC + POSITIVE_Y ;
+    return SimContext::get().gC + POSITIVE_Y ;
   }
   if (cur_y > dest_y) {
-    return gC + NEGATIVE_Y ;
+    return SimContext::get().gC + NEGATIVE_Y ;
   }
   if (cur_x < dest_x) {
-    return gC + POSITIVE_X ;
+    return SimContext::get().gC + POSITIVE_X ;
   }
   if (cur_x > dest_x) {
-    return gC + NEGATIVE_X ;
+    return SimContext::get().gC + NEGATIVE_X ;
   }
   return 0;
 }
@@ -971,7 +971,7 @@ void xy_yx_no_express_cmesh( const Router *r, const Flit *f, int in_channel,
       assert(available_vcs > 0);
 
       // randomly select dimension order at first hop
-      bool x_then_y = ((in_channel < gC) ?
+      bool x_then_y = ((in_channel < SimContext::get().gC) ?
 		       (RandomInt(1) > 0) :
 		       (f->vc < (vcBegin + available_vcs)));
 
@@ -999,51 +999,51 @@ int cmesh_next( int cur, int dest ) {
   const int POSITIVE_Y = 2 ;
   const int NEGATIVE_Y = 3 ;
 
-  int cur_y  = cur % gYCount;
-  int cur_x  = cur / gYCount;
-  int dest_y = dest % gYCount ;
-  int dest_x = dest / gYCount ;
+  int cur_y  = cur % SimContext::get().gYCount;
+  int cur_x  = cur / SimContext::get().gYCount;
+  int dest_y = dest % SimContext::get().gYCount ;
+  int dest_x = dest / SimContext::get().gYCount ;
 
   // Dimension-order Routing: x , y
   if (cur_x < dest_x) {
     // Express?
-    if ((dest_x - cur_x) > gXCount/2-1){
+    if ((dest_x - cur_x) > SimContext::get().gXCount/2-1){
       if (cur_y == 0)
-	return gC + NEGATIVE_Y ;
-      if (cur_y == (gYCount-1))
-	return gC + POSITIVE_Y ;
+	return SimContext::get().gC + NEGATIVE_Y ;
+      if (cur_y == (SimContext::get().gYCount-1))
+	return SimContext::get().gC + POSITIVE_Y ;
     }
-    return gC + POSITIVE_X ;
+    return SimContext::get().gC + POSITIVE_X ;
   }
   if (cur_x > dest_x) {
     // Express ? 
-    if ((cur_x - dest_x) > gXCount/2-1){
+    if ((cur_x - dest_x) > SimContext::get().gXCount/2-1){
       if (cur_y == 0)
-	return gC + NEGATIVE_Y ;
-      if (cur_y == (gYCount-1)) 
-	return gC + POSITIVE_Y ;
+	return SimContext::get().gC + NEGATIVE_Y ;
+      if (cur_y == (SimContext::get().gYCount-1)) 
+	return SimContext::get().gC + POSITIVE_Y ;
     }
-    return gC + NEGATIVE_X ;
+    return SimContext::get().gC + NEGATIVE_X ;
   }
   if (cur_y < dest_y) {
     // Express?
-    if ((dest_y - cur_y) > gYCount/2-1) {
+    if ((dest_y - cur_y) > SimContext::get().gYCount/2-1) {
       if (cur_x == 0)
-	return gC + NEGATIVE_X ;
-      if (cur_x == (gXCount-1))
-	return gC + POSITIVE_X ;
+	return SimContext::get().gC + NEGATIVE_X ;
+      if (cur_x == (SimContext::get().gXCount-1))
+	return SimContext::get().gC + POSITIVE_X ;
     }
-    return gC + POSITIVE_Y ;
+    return SimContext::get().gC + POSITIVE_Y ;
   }
   if (cur_y > dest_y) {
     // Express ?
-    if ((cur_y - dest_y) > gYCount/2-1){
+    if ((cur_y - dest_y) > SimContext::get().gYCount/2-1){
       if (cur_x == 0)
-	return gC + NEGATIVE_X ;
-      if (cur_x == (gXCount-1))
-	return gC + POSITIVE_X ;
+	return SimContext::get().gC + NEGATIVE_X ;
+      if (cur_x == (SimContext::get().gXCount-1))
+	return SimContext::get().gC + POSITIVE_X ;
     }
-    return gC + NEGATIVE_Y ;
+    return SimContext::get().gC + NEGATIVE_Y ;
   }
 
   assert(false);
@@ -1058,51 +1058,51 @@ int cmesh_next( int cur, int dest ) {
   const int POSITIVE_Y = 2 ;
   const int NEGATIVE_Y = 3 ;
   
-  int cur_y  = cur / gK ;
-  int cur_x  = cur % gK ;
-  int dest_y = dest / gK ;
-  int dest_x = dest % gK ;
+  int cur_y  = cur / SimContext::get().gK ;
+  int cur_x  = cur % SimContext::get().gK ;
+  int dest_y = dest / SimContext::get().gK ;
+  int dest_x = dest % SimContext::get().gK ;
 
   // Dimension-order Routing: x , y
   if (cur_x < dest_x) {
     // Express?
-    if ((dest_x - cur_x) > gK/2-1){
+    if ((dest_x - cur_x) > SimContext::get().gK/2-1){
       if (cur_y == 0)
-	return gC + NEGATIVE_Y ;
-      if (cur_y == (gK-1))
-	return gC + POSITIVE_Y ;
+	return SimContext::get().gC + NEGATIVE_Y ;
+      if (cur_y == (SimContext::get().gK-1))
+	return SimContext::get().gC + POSITIVE_Y ;
     }
-    return gC + POSITIVE_X ;
+    return SimContext::get().gC + POSITIVE_X ;
   }
   if (cur_x > dest_x) {
     // Express ? 
-    if ((cur_x - dest_x) > gK/2-1){
+    if ((cur_x - dest_x) > SimContext::get().gK/2-1){
       if (cur_y == 0)
-	return gC + NEGATIVE_Y ;
-      if (cur_y == (gK-1)) 
-	return gC + POSITIVE_Y ;
+	return SimContext::get().gC + NEGATIVE_Y ;
+      if (cur_y == (SimContext::get().gK-1)) 
+	return SimContext::get().gC + POSITIVE_Y ;
     }
-    return gC + NEGATIVE_X ;
+    return SimContext::get().gC + NEGATIVE_X ;
   }
   if (cur_y < dest_y) {
     // Express?
-    if ((dest_y - cur_y) > gK/2-1) {
+    if ((dest_y - cur_y) > SimContext::get().gK/2-1) {
       if (cur_x == 0)
-	return gC + NEGATIVE_X ;
-      if (cur_x == (gK-1))
-	return gC + POSITIVE_X ;
+	return SimContext::get().gC + NEGATIVE_X ;
+      if (cur_x == (SimContext::get().gK-1))
+	return SimContext::get().gC + POSITIVE_X ;
     }
-    return gC + POSITIVE_Y ;
+    return SimContext::get().gC + POSITIVE_Y ;
   }
   if (cur_y > dest_y) {
     // Express ?
-    if ((cur_y - dest_y) > gK/2-1){
+    if ((cur_y - dest_y) > SimContext::get().gK/2-1){
       if (cur_x == 0)
-	return gC + NEGATIVE_X ;
-      if (cur_x == (gK-1))
-	return gC + POSITIVE_X ;
+	return SimContext::get().gC + NEGATIVE_X ;
+      if (cur_x == (SimContext::get().gK-1))
+	return SimContext::get().gC + POSITIVE_X ;
     }
-    return gC + NEGATIVE_Y ;
+    return SimContext::get().gC + NEGATIVE_Y ;
   }
 
   assert(false);
@@ -1173,23 +1173,23 @@ int cmesh_next_no_express( int cur, int dest ) {
   const int NEGATIVE_Y = 3 ;
 
   //magic constant 2, which is supose to be _cX and _cY
-  int cur_y  = cur % gYCount;
-  int cur_x  = cur / gYCount;
-  int dest_y = dest % gYCount;
-  int dest_x = dest / gYCount;
+  int cur_y  = cur % SimContext::get().gYCount;
+  int cur_x  = cur / SimContext::get().gYCount;
+  int dest_y = dest % SimContext::get().gYCount;
+  int dest_x = dest / SimContext::get().gYCount;
 
   // Dimension-order Routing: x , y
   if (cur_x < dest_x) {
-    return gC + POSITIVE_X ;
+    return SimContext::get().gC + POSITIVE_X ;
   }
   if (cur_x > dest_x) {
-    return gC + NEGATIVE_X ;
+    return SimContext::get().gC + NEGATIVE_X ;
   }
   if (cur_y < dest_y) {
-    return gC + POSITIVE_Y ;
+    return SimContext::get().gC + POSITIVE_Y ;
   }
   if (cur_y > dest_y) {
-    return gC + NEGATIVE_Y ;
+    return SimContext::get().gC + NEGATIVE_Y ;
   }
   assert(false);
   return -1;
@@ -1204,23 +1204,23 @@ int cmesh_next_no_express( int cur, int dest ) {
   const int NEGATIVE_Y = 3 ;
   
   //magic constant 2, which is supose to be _cX and _cY
-  int cur_y  = cur/gK ;
-  int cur_x  = cur%gK ;
-  int dest_y = dest/gK;
-  int dest_x = dest%gK ;
+  int cur_y  = cur/SimContext::get().gK ;
+  int cur_x  = cur%SimContext::get().gK ;
+  int dest_y = dest/SimContext::get().gK;
+  int dest_x = dest%SimContext::get().gK ;
 
   // Dimension-order Routing: x , y
   if (cur_x < dest_x) {
-    return gC + POSITIVE_X ;
+    return SimContext::get().gC + POSITIVE_X ;
   }
   if (cur_x > dest_x) {
-    return gC + NEGATIVE_X ;
+    return SimContext::get().gC + NEGATIVE_X ;
   }
   if (cur_y < dest_y) {
-    return gC + POSITIVE_Y ;
+    return SimContext::get().gC + POSITIVE_Y ;
   }
   if (cur_y > dest_y) {
-    return gC + NEGATIVE_Y ;
+    return SimContext::get().gC + NEGATIVE_Y ;
   }
   assert(false);
   return -1;

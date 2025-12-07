@@ -62,40 +62,40 @@
 //////////////////////
 
  /* the current traffic manager instance */
-TrafficManager * trafficManager = NULL;
+//TrafficManager * trafficManager = NULL;
 
-int GetSimTime() {
-  return trafficManager->getTime();
-}
+// int SimContext::getSimTime() {
+//   return trafficManager->getTime();
+// }
 
-class Stats;
-Stats * GetStats(const std::string & name) {
-  Stats* test =  trafficManager->getStats(name);
-  if(test == 0){
-    cout<<"warning statistics "<<name<<" not found"<<endl;
-  }
-  return test;
-}
+// class Stats;
+// Stats * GetStats(const std::string & name) {
+//   Stats* test =  trafficManager->getStats(name);
+//   if(test == 0){
+//     cout<<"warning statistics "<<name<<" not found"<<endl;
+//   }
+//   return test;
+// }
 
 /* printing activity factor*/
-bool gPrintActivity;
+// bool gPrintActivity;
 
-int gK;//radix
-int gN;//dimension
-int gC;//concentration
-int gYCount;
-int gXCount;
+// int gK;//radix
+// int SimContext::get().gN;//dimension
+// int gC;//concentration
+// int gYCount;
+// int gXCount;
 
-int gNodes;
+// int gNodes;
 
-//generate nocviewer trace
-bool gTrace;
+// //generate nocviewer trace
+// bool gTrace;
 
-ostream * gWatchOut;
+// ostream * SimContext::get().gWatchOut;
 
 
-vector<int> gReceiverBusyCycles{};
-vector<deque<pair<int, int>>> gReceiverBuffers{};
+// vector<int> SimContext::get().gReceiverBusyCycles{};
+// vector<deque<pair<int, int>>> gReceiverBuffers{};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -116,15 +116,15 @@ bool Simulate( BookSimConfig const & config )
 
   }
 
-  gReceiverBusyCycles.resize(gNodes, 0);
-  gReceiverBuffers.resize(gNodes, deque<pair<int, int>>());
+  SimContext::get().gReceiverBusyCycles.resize(SimContext::get().gNodes, 0);
+  SimContext::get().gReceiverBuffers.resize(SimContext::get().gNodes, deque<pair<int, int>>());
 
   /*tcc and characterize are legacy
-   *not sure how to use them 
+   *not sure how to use them
    */
 
-  assert(trafficManager == NULL);
-  trafficManager = TrafficManagerSpike::New( config, net ) ;
+  assert(SimContext::get().trafficManager == NULL);
+  SimContext::get().trafficManager = TrafficManagerSpike::New( config, net ) ;
 
   /*Start the simulation run
    */
@@ -134,7 +134,7 @@ bool Simulate( BookSimConfig const & config )
   total_time = 0.0;
   gettimeofday(&start_time, NULL);
 
-  bool result = trafficManager->Run() ;
+  bool result = SimContext::get().trafficManager->Run() ;
 
 
   gettimeofday(&end_time, NULL);
@@ -154,8 +154,8 @@ bool Simulate( BookSimConfig const & config )
     delete net[i];
   }
 
-  delete trafficManager;
-  trafficManager = NULL;
+  delete SimContext::get().trafficManager;
+  SimContext::get().trafficManager = NULL;
 
   return result;
 }
@@ -177,18 +177,18 @@ int main( int argc, char **argv )
    */
   InitializeRoutingMap( config );
 
-  gPrintActivity = (config.GetInt("print_activity") > 0);
-  gTrace = (config.GetInt("viewer_trace") > 0);
+  SimContext::get().gPrintActivity = (config.GetInt("print_activity") > 0);
+  SimContext::get().gTrace = (config.GetInt("viewer_trace") > 0);
   
   string watch_out_file = config.GetStr( "watch_out" );
-  gWatchOut = &cout;
+  SimContext::get().gWatchOut = &cout;
   /*
   if(watch_out_file == "") {
-    gWatchOut = NULL;
+    SimContext::get().gWatchOut = NULL;
   } else if(watch_out_file == "-") {
-    gWatchOut = &cout;
+    SimContext::get().gWatchOut = &cout;
   } else {
-    gWatchOut = new ofstream(watch_out_file.c_str());
+    SimContext::get().gWatchOut = new ofstream(watch_out_file.c_str());
   }
   */
 

@@ -458,7 +458,7 @@ void TrafficManagerSpike::_Step()
                 //INFO("Marking PE:%d rx busy with fid:%d for %lld cycles\n",
                 //        n, f->pid, _flit_processing_cycles[f->pid]);
                 if(f->watch) {
-                    *gWatchOut << GetSimTime() << " | "
+                    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                             << "node" << n << " | "
                             << "Ejecting flit " << f->id
                             << " (packet " << f->pid << ")"
@@ -603,7 +603,7 @@ void TrafficManagerSpike::_Step()
 
                         INFO("PE:%d generating lookahead routing info for flit fid:%d\n", n, cf->pid);
                         if(cf->watch) {
-                            //*gWatchOut << GetSimTime() << " | "
+                            //*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                             //           << "node" << n << " | "
                             //           << "Generating lookahead routing info for flit " << cf->id
                             //           << " (NOQ)." << endl;
@@ -620,7 +620,7 @@ void TrafficManagerSpike::_Step()
                     }
                     //if(cf->watch) {
                         INFO("finding output vc for flit fid:%d\n", cf->pid);
-                        //*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                        //*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
                           //         << "Finding output VC for flit " << cf->id
                           //         << ":" << endl;
                     //}
@@ -634,20 +634,20 @@ void TrafficManagerSpike::_Step()
                         if(!dest_buf->IsAvailableFor(vc)) {
                             //if(cf->watch) {
                                 INFO("output vc:%d is busy\n", vc);
-                               // *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                               // *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
                                 //           << "  Output VC " << vc << " is busy." << endl;
                             //}
                         } else {
                             if(dest_buf->IsFullFor(vc)) {
                                 //if(cf->watch) {
                                     INFO("output vc:%d is full\n", vc);
-                                  //  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                                  //  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
                                    //            << "  Output VC " << vc << " is full." << endl;
                                 //}
                             } else {
                                 //if(cf->watch) {
                                 INFO("selected output vc:%d\n", vc);
-                                //    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                                //    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
                                 //               << "  Selected output VC " << vc << "." << endl;
                                 //}
                                 cf->vc = vc;
@@ -659,7 +659,7 @@ void TrafficManagerSpike::_Step()
 
                 if(cf->vc == -1) {
                     //if(cf->watch) {
-                        //*gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                        //*SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
                         //           << "No output VC found for flit " << cf->id
                         //           << "." << endl;
                         INFO("no output vc found for flit fid:%d'n", cf->pid);
@@ -667,7 +667,7 @@ void TrafficManagerSpike::_Step()
                 } else {
                     if(dest_buf->IsFullFor(cf->vc)) {
                         //if(cf->watch) {
-                           // *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                           // *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
                            //            << "Selected output VC " << cf->vc
                            //            << " is full for flit " << cf->id
                            //            << "." << endl;
@@ -695,13 +695,13 @@ void TrafficManagerSpike::_Step()
                             int in_channel = inject->GetSinkPort();
                             _rf(router, f, in_channel, &f->la_route_set, false);
                             if(f->watch) {
-                                *gWatchOut << GetSimTime() << " | "
+                                *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                                            << "node" << n << " | "
                                            << "Generating lookahead routing info for flit " << f->id
                                            << "." << endl;
                             }
                         } else if(f->watch) {
-                            *gWatchOut << GetSimTime() << " | "
+                            *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                                        << "node" << n << " | "
                                        << "Already generated lookahead routing info for flit " << f->id
                                        << " (NOQ)." << endl;
@@ -746,7 +746,7 @@ void TrafficManagerSpike::_Step()
                 }
 
                 if(f->watch) {
-                    *gWatchOut << GetSimTime() << " | "
+                    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                                << "node" << n << " | "
                                << "Injecting flit " << f->id
                                << " into subnet " << subnet
@@ -792,7 +792,7 @@ void TrafficManagerSpike::_Step()
 
                 f->atime = _time;
                 if(f->watch) {
-                    *gWatchOut << GetSimTime() << " | "
+                    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                                 << "node" << n << " | "
                                 << "Injecting credit for VC " << f->vc
                                 << " into subnet " << subnet
@@ -827,15 +827,16 @@ void TrafficManagerSpike::_Step()
     }
 
     for (int i = 0; i < _nodes; ++i) {
-        if (gReceiverBusyCycles[i] > 0) {
-          --gReceiverBusyCycles[i];
+        if (SimContext::get().gReceiverBusyCycles[i] > 0) {
+          --SimContext::get().gReceiverBusyCycles[i];
         }
-        if ((gReceiverBusyCycles[i] == 0) && !gReceiverBuffers[i].empty()) {
-          auto id_cycles_pair = gReceiverBuffers[i].front();
+        if ((SimContext::get().gReceiverBusyCycles[i] == 0) &&
+             !SimContext::get().gReceiverBuffers[i].empty()) {
+          auto id_cycles_pair = SimContext::get().gReceiverBuffers[i].front();
           [[maybe_unused]] int flit_id = id_cycles_pair.first;
           int flit_processing_cycles = id_cycles_pair.second;
-          gReceiverBusyCycles[i] = flit_processing_cycles;
-          gReceiverBuffers[i].pop_front();
+          SimContext::get().gReceiverBusyCycles[i] = flit_processing_cycles;
+          SimContext::get().gReceiverBuffers[i].pop_front();
           INFO("fid:%d core:%d Rx finished get flit and set %d processing cycles "
               "(new buffer size:%zu)\n",
               flit_id, i, flit_processing_cycles, gReceiverBuffers[i].size());
@@ -846,7 +847,7 @@ void TrafficManagerSpike::_Step()
 
     ++_time;
     assert(_time);
-    if(gTrace){
+    if(SimContext::get().gTrace){
         cout<<"TIME "<<_time<<endl;
     }
 }
@@ -871,7 +872,7 @@ void TrafficManagerSpike::_RetireFlit(Flit* f, int dest) {
     }
 
     if ( f->watch ) {
-        *gWatchOut << GetSimTime() << " | "
+        *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                 << "node" << dest << " | "
                 << "Retiring flit " << f->id
                 << " (packet " << f->pid
@@ -909,7 +910,7 @@ void TrafficManagerSpike::_RetireFlit(Flit* f, int dest) {
             assert(f->pid == head->pid);
         }
         if ( f->watch ) {
-            *gWatchOut << GetSimTime() << " | "
+            *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                     << "node" << dest << " | "
                     << "Retiring packet " << f->pid
                     << " (plat = " << f->atime - head->ctime
@@ -980,7 +981,7 @@ int TrafficManagerSpike::_GeneratePacket( int source, int stype,
     //int packet_destination = _traffic_pattern[cl]->dest(source);
     int packet_destination = dest;
     bool record = false;
-    bool watch = gWatchOut && (_packets_to_watch.count(pid) > 0);
+    bool watch = SimContext::get().gWatchOut && (_packets_to_watch.count(pid) > 0);
     if(_use_read_write[cl]){
         if(stype > 0) {
             if (stype == 1) {
@@ -1034,7 +1035,7 @@ int TrafficManagerSpike::_GeneratePacket( int source, int stype,
     int subnetwork = subnet;
 
     if ( watch ) {
-        *gWatchOut << GetSimTime() << " | "
+        *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                    << "node" << source << " | "
                    << "Enqueuing packet " << pid
                    << " at time " << time
@@ -1046,7 +1047,7 @@ int TrafficManagerSpike::_GeneratePacket( int source, int stype,
         f->id     = _cur_id++;
         assert(_cur_id);
         f->pid    = pid;
-        f->watch  = watch | (gWatchOut && (_flits_to_watch.count(f->id) > 0));
+        f->watch  = watch | (SimContext::get().gWatchOut && (_flits_to_watch.count(f->id) > 0));
         f->subnetwork = subnetwork;
         f->src    = source;
         f->ctime  = time;
@@ -1059,7 +1060,7 @@ int TrafficManagerSpike::_GeneratePacket( int source, int stype,
             _measured_in_flight_flits[f->cl].insert(make_pair(f->id, f));
         }
 
-        if(gTrace){
+        if(SimContext::get().gTrace){
             cout<<"New Flit "<<f->src<<endl;
         }
         f->type = packet_type;
@@ -1097,7 +1098,7 @@ int TrafficManagerSpike::_GeneratePacket( int source, int stype,
         f->vc  = -1;
 
         if ( f->watch ) {
-            *gWatchOut << GetSimTime() << " | "
+            *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | "
                        << "node" << source << " | "
                        << "Enqueuing flit " << f->id
                        << " (packet " << f->pid

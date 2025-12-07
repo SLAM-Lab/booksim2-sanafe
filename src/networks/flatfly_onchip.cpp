@@ -89,9 +89,9 @@ void FlatFlyOnChip::_ComputeSize( const Configuration &config )
   _xrouter = config.GetInt("xr");
   _yrouter = config.GetInt("yr");
   assert(_xrouter == _yrouter);
-  gK = _k; 
-  gN = _n;
-  gC = _c;
+  SimContext::get().gK = _k; 
+  SimContext::get().gN = _n;
+  SimContext::get().gC = _c;
   
   assert(_c == _xrouter*_yrouter);
 
@@ -110,7 +110,7 @@ void FlatFlyOnChip::_BuildNet( const Configuration &config )
   ostringstream router_name;
 
   
-  if(gTrace){
+  if(SimContext::get().gTrace){
 
     cout<<"Setup Finished Router"<<endl;
     
@@ -281,14 +281,14 @@ void FlatFlyOnChip::_BuildNet( const Configuration &config )
 	
 	_routers[other]->AddInputChannel( _chan[_output], _chan_cred[_output]);
 	
-	if(gTrace){
+	if(SimContext::get().gTrace){
 	  cout<<"Link "<<_output<<" "<<node<<" "<<other<<" "<<length<<endl;
 	}
 	
       }
     }
   }
-  if(gTrace){
+  if(SimContext::get().gTrace){
     cout<<"Setup Finished Link"<<endl;
   }
 }
@@ -358,10 +358,10 @@ void adaptive_xyyx_flatfly( const Router *r, const Flit *f, int in_channel,
   } else {
 
     int dest = flatfly_transformation(f->dest);
-    int targetr = (int)(dest/gC);
+    int targetr = (int)(dest/SimContext::get().gC);
 
     if(targetr==r->GetID()){ //if we are at the final router, yay, output to client
-      out_port = dest % gC;
+      out_port = dest % SimContext::get().gC;
 
     } else {
    
@@ -375,7 +375,7 @@ void adaptive_xyyx_flatfly( const Router *r, const Flit *f, int in_channel,
       // Route order (XY or YX) determined when packet is injected
       //  into the network, adaptively
       bool x_then_y;
-      if(in_channel < gC){
+      if(in_channel < SimContext::get().gC){
 	int credit_xy = r->GetUsedCredit(out_port_xy);
 	int credit_yx = r->GetUsedCredit(out_port_yx);
 	if(credit_xy > credit_yx) {
@@ -435,10 +435,10 @@ void xyyx_flatfly( const Router *r, const Flit *f, int in_channel,
   } else {
 
     int dest = flatfly_transformation(f->dest);
-    int targetr = (int)(dest/gC);
+    int targetr = (int)(dest/SimContext::get().gC);
 
     if(targetr==r->GetID()){ //if we are at the final router, yay, output to client
-      out_port = dest % gC;
+      out_port = dest % SimContext::get().gC;
 
     } else {
    
@@ -447,7 +447,7 @@ void xyyx_flatfly( const Router *r, const Flit *f, int in_channel,
       assert(available_vcs > 0);
 
       // randomly select dimension order at first hop
-      bool x_then_y = ((in_channel < gC) ?
+      bool x_then_y = ((in_channel < SimContext::get().gC) ?
 		       (RandomInt(1) > 0) : 
 		       (f->vc < (vcBegin + available_vcs)));
 
@@ -468,20 +468,20 @@ void xyyx_flatfly( const Router *r, const Flit *f, int in_channel,
 }
 
 int flatfly_outport_yx(int dest, int rID) {
-  int dest_rID = (int) (dest / gC);
-  int _dim   = gN;
+  int dest_rID = (int) (dest / SimContext::get().gC);
+  int _dim   = SimContext::get().gN;
   int output = -1, dID, sID;
   
   if(dest_rID==rID){
-    return dest % gC;
+    return dest % SimContext::get().gC;
   }
 
   for (int d=_dim-1;d >= 0; d--) {
-    int power = powi(gK,d);
+    int power = powi(SimContext::get().gK,d);
     dID = int(dest_rID / power);
     sID = int(rID / power);
     if ( dID != sID ) {
-      output = gC + ((gK-1)*d) - 1;
+      output = SimContext::get().gC + ((SimContext::get().gK-1)*d) - 1;
       if (dID > sID) {
 	output += dID;
       } else {
@@ -527,15 +527,15 @@ void valiant_flatfly( const Router *r, const Flit *f, int in_channel,
 
   } else {
 
-    if ( in_channel < gC ){
+    if ( in_channel < SimContext::get().gC ){
       f->ph = 0;
-      f->intm = RandomInt( powi( gK, gN )*gC-1);
+      f->intm = RandomInt( powi( SimContext::get().gK, SimContext::get().gN )*SimContext::get().gC-1);
     }
 
     int intm = flatfly_transformation(f->intm);
     int dest = flatfly_transformation(f->dest);
 
-    if((int)(intm/gC) == r->GetID() || (int)(dest/gC)== r->GetID()){
+    if((int)(intm/SimContext::get().gC) == r->GetID() || (int)(dest/SimContext::get().gC)== r->GetID()){
       f->ph = 1;
     }
 
@@ -546,7 +546,7 @@ void valiant_flatfly( const Router *r, const Flit *f, int in_channel,
       out_port = flatfly_outport(dest, r->GetID());
     }
 
-    if((int)(dest/gC) != r->GetID()) {
+    if((int)(dest/SimContext::get().gC) != r->GetID()) {
 
       //each class must have at least 2 vcs assigned or else valiant valiant will deadlock
       int const available_vcs = (vcEnd - vcBegin + 1) / 2;
@@ -597,15 +597,15 @@ void min_flatfly( const Router *r, const Flit *f, int in_channel,
   } else {
 
     int dest  = flatfly_transformation(f->dest);
-    int targetr= (int)(dest/gC);
-    //int xdest = ((int)(dest/gC)) % gK;
-    //int xcurr = ((r->GetID())) % gK;
+    int targetr= (int)(dest/SimContext::get().gC);
+    //int xdest = ((int)(dest/SimContext::get().gC)) % SimContext::get().gK;
+    //int xcurr = ((r->GetID())) % SimContext::get().gK;
 
-    //int ydest = ((int)(dest/gC)) / gK;
-    //int ycurr = ((r->GetID())) / gK;
+    //int ydest = ((int)(dest/SimContext::get().gC)) / SimContext::get().gK;
+    //int ycurr = ((r->GetID())) / SimContext::get().gK;
 
     if(targetr==r->GetID()){ //if we are at the final router, yay, output to client
-      out_port = dest % gC;
+      out_port = dest % SimContext::get().gC;
     } else{ //else select a dimension at random
       out_port = flatfly_outport(dest, r->GetID());
     }
@@ -654,7 +654,7 @@ void ugal_xyyx_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
     int dest  = flatfly_transformation(f->dest);
 
     int rID =  r->GetID();
-    int _concentration = gC;
+    int _concentration = SimContext::get().gC;
     int found;
     int debug = 0;
     int tmp_out_port, _ran_intm;
@@ -662,14 +662,14 @@ void ugal_xyyx_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
     int threshold = 2;
 
 
-    if ( in_channel < gC ){
-      if(gTrace){
+    if ( in_channel < SimContext::get().gC ){
+      if(SimContext::get().gTrace){
 	cout<<"New Flit "<<f->src<<endl;
       }
       f->ph   = 0;
     }
 
-    if(gTrace){
+    if(SimContext::get().gTrace){
       int load = 0;
       cout<<"Router "<<rID<<endl;
       cout<<"Input Channel "<<in_channel<<endl;
@@ -699,7 +699,7 @@ void ugal_xyyx_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       }
       else  {
 	found = 1;
-	out_port = dest % gC;
+	out_port = dest % SimContext::get().gC;
 	if (debug)   cout << "      final routing to destination ";
       }
     }
@@ -710,7 +710,7 @@ void ugal_xyyx_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       assert(xy_available_vcs > 0);
 
       // randomly select dimension order at first hop
-      bool x_then_y = ((in_channel < gC) ?
+      bool x_then_y = ((in_channel < SimContext::get().gC) ?
 		       (RandomInt(1) > 0) : 
 		       (f->vc < (vcBegin + xy_available_vcs)));
 
@@ -770,18 +770,18 @@ void ugal_xyyx_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       //dest here should be == intm if ph==1, or dest == dest if ph == 2
       if(x_then_y){
 	out_port =  flatfly_outport(dest, rID);
-	if(out_port >= gC) {
+	if(out_port >= SimContext::get().gC) {
 	  vcEnd -= xy_available_vcs;
 	}
       } else {
 	out_port =  flatfly_outport_yx(dest, rID);
-	if(out_port >= gC) {
+	if(out_port >= SimContext::get().gC) {
 	  vcBegin += xy_available_vcs;
 	}
       }
 
       // if we haven't reached our destination, restrict VCs appropriately to avoid routing deadlock
-      if(out_port >= gC) {
+      if(out_port >= SimContext::get().gC) {
 
 	int const ph_available_vcs = xy_available_vcs / 2;
 	assert(ph_available_vcs > 0);
@@ -802,15 +802,15 @@ void ugal_xyyx_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       cout << *f; exit (-1);
     }
 
-    if (out_port >= gN*(gK-1) + gC)  {
+    if (out_port >= SimContext::get().gN*(SimContext::get().gK-1) + SimContext::get().gC)  {
       cout << " ERROR: output port too big! " << endl;
       cout << " OUTPUT select: " << out_port << endl;
-      cout << " router radix: " <<  gN*(gK-1) + gK << endl;
+      cout << " router radix: " <<  SimContext::get().gN*(SimContext::get().gK-1) + SimContext::get().gK << endl;
       exit (-1);
     }
 
     if (debug) cout << "        through output port : " << out_port << endl;
-    if(gTrace){cout<<"Outport "<<out_port<<endl;cout<<"Stop Mark"<<endl;}
+    if(SimContext::get().gTrace){cout<<"Outport "<<out_port<<endl;cout<<"Stop Mark"<<endl;}
 
   }
 
@@ -853,21 +853,21 @@ void ugal_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
     int dest  = flatfly_transformation(f->dest);
 
     int rID =  r->GetID();
-    int _concentration = gC;
+    int _concentration = SimContext::get().gC;
     int found;
     int debug = 0;
     int tmp_out_port, _ran_intm;
     int _min_hop, _nonmin_hop, _min_queucnt, _nonmin_queucnt;
     int threshold = 2;
 
-    if ( in_channel < gC ){
-      if(gTrace){
+    if ( in_channel < SimContext::get().gC ){
+      if(SimContext::get().gTrace){
 	cout<<"New Flit "<<f->src<<endl;
       }
       f->ph   = 0;
     }
 
-    if(gTrace){
+    if(SimContext::get().gTrace){
       int load = 0;
       cout<<"Router "<<rID<<endl;
       cout<<"Input Channel "<<in_channel<<endl;
@@ -899,7 +899,7 @@ void ugal_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       }
       else  {
 	found = 1;
-	out_port = dest % gC;
+	out_port = dest % SimContext::get().gC;
 	if (debug)   cout << "      final routing to destination ";
       }
     }
@@ -911,7 +911,7 @@ void ugal_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
 	_ran_intm = find_ran_intm(flatfly_transformation(f->src), dest);
 	tmp_out_port =  flatfly_outport(dest, rID);
 	if (f->watch){
-	  *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		     << " MIN tmp_out_port: " << tmp_out_port;
 	}
 
@@ -921,7 +921,7 @@ void ugal_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
 	tmp_out_port =  flatfly_outport(_ran_intm, rID);
 
 	if (f->watch){
-	  *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		     << " NONMIN tmp_out_port: " << tmp_out_port << endl;
 	}
 	if (_ran_intm >= rID*_concentration && _ran_intm < (rID+1)*_concentration) {
@@ -955,7 +955,7 @@ void ugal_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       out_port =  flatfly_outport(dest, rID);
 
       // if we haven't reached our destination, restrict VCs appropriately to avoid routing deadlock
-      if(out_port >= gC) {
+      if(out_port >= SimContext::get().gC) {
 	int const available_vcs = (vcEnd - vcBegin + 1) / 2;
 	assert(available_vcs > 0);
 	if(f->ph == 1) {
@@ -974,15 +974,15 @@ void ugal_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       cout << *f; exit (-1);
     }
 
-    if (out_port >= gN*(gK-1) + gC)  {
+    if (out_port >= SimContext::get().gN*(SimContext::get().gK-1) + SimContext::get().gC)  {
       cout << " ERROR: output port too big! " << endl;
       cout << " OUTPUT select: " << out_port << endl;
-      cout << " router radix: " <<  gN*(gK-1) + gK << endl;
+      cout << " router radix: " <<  SimContext::get().gN*(SimContext::get().gK-1) + SimContext::get().gK << endl;
       exit (-1);
     }
 
     if (debug) cout << "        through output port : " << out_port << endl;
-    if(gTrace) {
+    if(SimContext::get().gTrace) {
       cout<<"Outport "<<out_port<<endl;
       cout<<"Stop Mark"<<endl;
     }
@@ -1026,21 +1026,21 @@ void ugal_pni_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
     int dest  = flatfly_transformation(f->dest);
 
     int rID =  r->GetID();
-    int _concentration = gC;
+    int _concentration = SimContext::get().gC;
     int found;
     int debug = 0;
     int tmp_out_port, _ran_intm;
     int _min_hop, _nonmin_hop, _min_queucnt, _nonmin_queucnt;
     int threshold = 2;
 
-    if ( in_channel < gC ){
-      if(gTrace){
+    if ( in_channel < SimContext::get().gC ){
+      if(SimContext::get().gTrace){
 	cout<<"New Flit "<<f->src<<endl;
       }
       f->ph   = 0;
     }
 
-    if(gTrace){
+    if(SimContext::get().gTrace){
       int load = 0;
       cout<<"Router "<<rID<<endl;
       cout<<"Input Channel "<<in_channel<<endl;
@@ -1072,7 +1072,7 @@ void ugal_pni_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       }
       else  {
 	found = 1;
-	out_port = dest % gC;
+	out_port = dest % SimContext::get().gC;
 	if (debug)   cout << "      final routing to destination ";
       }
     }
@@ -1084,7 +1084,7 @@ void ugal_pni_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
 	_ran_intm = find_ran_intm(flatfly_transformation(f->src), dest);
 	tmp_out_port =  flatfly_outport(dest, rID);
 	if (f->watch){
-	  *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		     << " MIN tmp_out_port: " << tmp_out_port;
 	}
 
@@ -1094,7 +1094,7 @@ void ugal_pni_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
 	tmp_out_port =  flatfly_outport(_ran_intm, rID);
 
 	if (f->watch){
-	  *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+	  *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 		     << " NONMIN tmp_out_port: " << tmp_out_port << endl;
 	}
 	if (_ran_intm >= rID*_concentration && _ran_intm < (rID+1)*_concentration) {
@@ -1128,7 +1128,7 @@ void ugal_pni_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       out_port =  flatfly_outport(dest, rID);
 
       // if we haven't reached our destination, restrict VCs appropriately to avoid routing deadlock
-      if(out_port >= gC) {
+      if(out_port >= SimContext::get().gC) {
 	int const available_vcs = (vcEnd - vcBegin + 1) / 2;
 	assert(available_vcs > 0);
 	if(f->ph == 1) {
@@ -1147,46 +1147,46 @@ void ugal_pni_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
       cout << *f; exit (-1);
     }
 
-    if (out_port >= gN*(gK-1) + gC)  {
+    if (out_port >= SimContext::get().gN*(SimContext::get().gK-1) + SimContext::get().gC)  {
       cout << " ERROR: output port too big! " << endl;
       cout << " OUTPUT select: " << out_port << endl;
-      cout << " router radix: " <<  gN*(gK-1) + gK << endl;
+      cout << " router radix: " <<  SimContext::get().gN*(SimContext::get().gK-1) + SimContext::get().gK << endl;
       exit (-1);
     }
 
     if (debug) cout << "        through output port : " << out_port << endl;
-    if(gTrace) {
+    if(SimContext::get().gTrace) {
       cout<<"Outport "<<out_port<<endl;
       cout<<"Stop Mark"<<endl;
     }
   }
 
-  if(inject || (out_port >= gC)) {
+  if(inject || (out_port >= SimContext::get().gC)) {
 
     // NOTE: for "proper" flattened butterfly configurations (i.e., ones 
-    // derived from flattening an actual butterfly), gK and gC are the same!
-    assert(gK == gC);
+    // derived from flattening an actual butterfly), SimContext::get().gK and SimContext::get().gC are the same!
+    assert(SimContext::get().gK == SimContext::get().gC);
 
     assert(inject ? (f->ph == -1) : (f->ph == 1 || f->ph == 2));
 
     int next_coord = flatfly_transformation(f->dest);
     if(inject) {
-      next_coord /= gC;
-      next_coord %= gK;
+      next_coord /= SimContext::get().gC;
+      next_coord %= SimContext::get().gK;
     } else {
-      int next_dim = (out_port - gC) / (gK - 1) + 1;
-      if(next_dim == gN) {
-	next_coord %= gC;
+      int next_dim = (out_port - SimContext::get().gC) / (SimContext::get().gK - 1) + 1;
+      if(next_dim == SimContext::get().gN) {
+	next_coord %= SimContext::get().gC;
       } else {
-	next_coord /= gC;
+	next_coord /= SimContext::get().gC;
 	for(int d = 0; d < next_dim; ++d) {
-	  next_coord /= gK;
+	  next_coord /= SimContext::get().gK;
 	}
-	next_coord %= gK;
+	next_coord %= SimContext::get().gK;
       }
     }
-    assert(next_coord >= 0 && next_coord < gK);
-    int vcs_per_dest = (vcEnd - vcBegin + 1) / gK;
+    assert(next_coord >= 0 && next_coord < SimContext::get().gK);
+    int vcs_per_dest = (vcEnd - vcBegin + 1) / SimContext::get().gK;
     assert(vcs_per_dest > 0);
     vcBegin += next_coord * vcs_per_dest;
     vcEnd = vcBegin + vcs_per_dest - 1;
@@ -1203,22 +1203,22 @@ void ugal_pni_flatfly_onchip( const Router *r, const Flit *f, int in_channel,
 //=============================================================^M
 int find_distance (int src, int dest) {
   int dist = 0;
-  int _dim   = gN;
+  int _dim   = SimContext::get().gN;
   
-  int src_tmp= (int) src / gC;
-  int dest_tmp = (int) dest / gC;
+  int src_tmp= (int) src / SimContext::get().gC;
+  int dest_tmp = (int) dest / SimContext::get().gC;
   
   //  cout << " HOP CNT between  src: " << src << " dest: " << dest;
   for (int d=0;d < _dim; d++) {
-    //int _dim_size = powi(gK, d )*gC;
+    //int _dim_size = powi(SimContext::get().gK, d )*SimContext::get().gC;
     //if ((int)(src / _dim_size) !=  (int)(dest / _dim_size))
     //   dist++;
-    int src_id = src_tmp % gK;
-    int dest_id = dest_tmp % gK;
+    int src_id = src_tmp % SimContext::get().gK;
+    int dest_id = dest_tmp % SimContext::get().gK;
     if (src_id !=  dest_id)
       dist++;
-    src_tmp = (int) (src_tmp / gK);
-    dest_tmp = (int) (dest_tmp / gK);
+    src_tmp = (int) (src_tmp / SimContext::get().gK);
+    dest_tmp = (int) (dest_tmp / SimContext::get().gK);
   }
   
   //  cout << " : " << dist << endl;
@@ -1230,7 +1230,7 @@ int find_distance (int src, int dest) {
 // UGAL : find random node for load balancing
 //=============================================================^M
 int find_ran_intm (int src, int dest) {
-  int _dim   = gN;
+  int _dim   = SimContext::get().gN;
   int _dim_size;
   int _ran_dest = 0;
   int debug = 0;
@@ -1238,27 +1238,27 @@ int find_ran_intm (int src, int dest) {
   if (debug) 
     cout << " INTM node for  src: " << src << " dest: " <<dest << endl;
   
-  src = (int) (src / gC);
-  dest = (int) (dest / gC);
+  src = (int) (src / SimContext::get().gC);
+  dest = (int) (dest / SimContext::get().gC);
   
-  _ran_dest = RandomInt(gC - 1);
+  _ran_dest = RandomInt(SimContext::get().gC - 1);
   if (debug) cout << " ............ _ran_dest : " << _ran_dest << endl;
   for (int d=0;d < _dim; d++) {
     
-    _dim_size = powi(gK, d)*gC;
-    if ((src % gK) ==  (dest % gK)) {
-      _ran_dest += (src % gK) * _dim_size;
+    _dim_size = powi(SimContext::get().gK, d)*SimContext::get().gC;
+    if ((src % SimContext::get().gK) ==  (dest % SimContext::get().gK)) {
+      _ran_dest += (src % SimContext::get().gK) * _dim_size;
       if (debug) 
-	cout << "    share same dimension : " << d << " int node : " << _ran_dest << " src ID : " << src % gK << endl;
+	cout << "    share same dimension : " << d << " int node : " << _ran_dest << " src ID : " << src % SimContext::get().gK << endl;
     } else {
       // src and dest are in the same dimension "d" + 1
       // ==> thus generate a random destination within
-      _ran_dest += RandomInt(gK - 1) * _dim_size;
+      _ran_dest += RandomInt(SimContext::get().gK - 1) * _dim_size;
       if (debug) 
 	cout << "    different  dimension : " << d << " int node : " << _ran_dest << " _dim_size: " << _dim_size << endl;
     }
-    src = (int) (src / gK);
-    dest = (int) (dest / gK);
+    src = (int) (src / SimContext::get().gK);
+    dest = (int) (dest / SimContext::get().gK);
   }
   
   if (debug) cout << " intermediate destination NODE: " << _ran_dest << endl;
@@ -1273,20 +1273,20 @@ int find_ran_intm (int src, int dest) {
 //=============================================================
 // starting from DIM 0 (x first)
 int flatfly_outport(int dest, int rID) {
-  int dest_rID = (int) (dest / gC);
-  int _dim   = gN;
+  int dest_rID = (int) (dest / SimContext::get().gC);
+  int _dim   = SimContext::get().gN;
   int output = -1, dID, sID;
   
   if(dest_rID==rID){
-    return dest % gC;
+    return dest % SimContext::get().gC;
   }
 
 
   for (int d=0;d < _dim; d++) {
-    dID = (dest_rID % gK);
-    sID = (rID % gK);
+    dID = (dest_rID % SimContext::get().gK);
+    sID = (rID % SimContext::get().gK);
     if ( dID != sID ) {
-      output = gC + ((gK-1)*d) - 1;
+      output = SimContext::get().gC + ((SimContext::get().gK-1)*d) - 1;
       if (dID > sID) {
 
 	output += dID;
@@ -1296,8 +1296,8 @@ int flatfly_outport(int dest, int rID) {
       
       return output;
     }
-    dest_rID = (int) (dest_rID / gK);
-    rID      = (int) (rID / gK);
+    dest_rID = (int) (dest_rID / SimContext::get().gK);
+    rID      = (int) (rID / SimContext::get().gK);
   }
   if (output == -1) {
     cout << " ERROR ---- FLATFLY_OUTPORT function : output not found " << endl;
@@ -1323,7 +1323,7 @@ int flatfly_transformation(int dest){
   int vertical = (dest/(_xcount*_xrouter))/(_yrouter);
   int vertical_rem = (dest/(_xcount*_xrouter))%(_yrouter);
   //transform the destination to as if node0 was 0,1,2,3 and so forth
-  dest = (vertical*_xcount + horizontal)*gC+_xrouter*vertical_rem+horizontal_rem;
+  dest = (vertical*_xcount + horizontal)*SimContext::get().gC+_xrouter*vertical_rem+horizontal_rem;
   //cout<<"Transformed destination "<<dest<<endl<<endl;
   return dest;
 }

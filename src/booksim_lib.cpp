@@ -41,40 +41,18 @@
 #include <ctime>
 #include <sstream>
 
-// Global variables to maintain BookSim2 state
-static TrafficManager *trafficManager = nullptr;
-static bool initialized = false;
-int GetSimTime() {
-  return trafficManager->getTime();
-}
-
-bool gPrintActivity;
-
-int gK;//radix
-int gN;//dimension
-int gC;//concentration
-int gYCount;
-int gXCount;
-int gNodes;
-
-//generate nocviewer trace
-bool gTrace;
-
-ostream * gWatchOut;
-
-vector<int> gReceiverBusyCycles{};
-vector<deque<pair<int, int>>> gReceiverBuffers{};
-
 vector<SpikeEvent> gSpikeEvents{};
+// static bool initialized = false;
 
-void booksim_init() {
-  if (initialized) {
-    std::cerr << "BookSim2 is already initialized!" << std::endl;
-  }
-  initialized = true;
+// void booksim_init() {
+//   if (initialized) {
+//     std::cerr << "BookSim2 is already initialized!" << std::endl;
+//   }
+//   initialized = true;
 
-  return;
-}
+//   return;
+// }
+void booksim_init() { }
 
 BookSimConfig booksim_load_config(const std::vector<std::string> config_vec)
 {
@@ -86,21 +64,21 @@ BookSimConfig booksim_load_config(const std::vector<std::string> config_vec)
   }
 
   string watch_out_file = config.GetStr( "watch_out" );
-  gWatchOut = &cout;
+  SimContext::get().gWatchOut = &cout;
   if(watch_out_file == "") {
-    gWatchOut = NULL;
+    SimContext::get().gWatchOut = NULL;
   } else if(watch_out_file == "-") {
-    gWatchOut = &cout;
+    SimContext::get().gWatchOut = &cout;
   } else {
-    gWatchOut = new ofstream(watch_out_file.c_str());
+    SimContext::get().gWatchOut = new ofstream(watch_out_file.c_str());
   }
 
   /*initialize routing, traffic, injection functions
    */
   InitializeRoutingMap( config );
 
-  gPrintActivity = (config.GetInt("print_activity") > 0);
-  gTrace = (config.GetInt("viewer_trace") > 0);
+  SimContext::get().gPrintActivity = (config.GetInt("print_activity") > 0);
+  SimContext::get().gTrace = (config.GetInt("viewer_trace") > 0);
 
   return config;
 }
@@ -121,20 +99,20 @@ double booksim_run( BookSimConfig const & config)
 
   }
 
-  gReceiverBusyCycles.resize(gNodes, 0);
-  gReceiverBuffers.resize(gNodes, deque<pair<int, int>>());
+  SimContext::get().gReceiverBusyCycles.resize(SimContext::get().gNodes, 0);
+  SimContext::get().gReceiverBuffers.resize(SimContext::get().gNodes, deque<pair<int, int>>());
 
   /*tcc and characterize are legacy
    *not sure how to use them
    */
 
-  assert(trafficManager == NULL);
-  trafficManager = TrafficManagerSpike::New( config, net ) ;
+  assert(SimContext::get().trafficManager == NULL);
+  SimContext::get().trafficManager = TrafficManagerSpike::New( config, net ) ;
   INFO("Pushing %zu spike events.\n", gSpikeEvents.size());
 
   for (auto &event : gSpikeEvents)
   {
-    trafficManager->PushTraceEvent(event);
+    SimContext::get().trafficManager->PushTraceEvent(event);
   }
   gSpikeEvents.clear();
   /*Start the simulation run
@@ -145,7 +123,7 @@ double booksim_run( BookSimConfig const & config)
   //total_time = 0.0;
   gettimeofday(&start_time, NULL);
 
-  trafficManager->Run() ;
+  SimContext::get().trafficManager->Run() ;
 
 
   gettimeofday(&end_time, NULL);
@@ -162,7 +140,7 @@ double booksim_run( BookSimConfig const & config)
     delete net[i];
   }
 
-  int cycle_count = trafficManager->getTime();
+  int cycle_count = SimContext::get().trafficManager->getTime();
   double clock_period = config.GetFloat("clock_period");
   double run_time = cycle_count * clock_period;
 
@@ -194,8 +172,8 @@ void booksim_create_spike_event( int timestep, std::pair<std::string, int> src_n
 
 void booksim_close()
 {
-  delete trafficManager;
-  trafficManager = NULL;
+  delete SimContext::get().trafficManager;
+  SimContext::get().trafficManager = NULL;
 
   gSpikeEvents.clear();
 

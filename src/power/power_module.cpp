@@ -446,7 +446,7 @@ double Power_Module:: areaOutputModule(double Outputs) {
 }
 
 void Power_Module::run(){
-  totalTime = GetSimTime();
+  totalTime = SimContext::get().getSimTime();
   channelWirePower=0;
   channelClkPower=0;
   channelDFFPower=0;

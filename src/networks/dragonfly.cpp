@@ -179,7 +179,7 @@ void DragonFlyNew::_ComputeSize( const Configuration &config )
 
   
   // FIX...
-  gK = _p; gN = _n;
+  SimContext::get().gK = _p; SimContext::get().gN = _n;
 
   // with 1 dimension, total of 2p routers per group
   // N = 2p * p * (2p^2 + 1)
@@ -446,7 +446,7 @@ void min_dragonflynew( const Router *r, const Flit *f, int in_channel,
   
   out_vc = f->ph;
   if (debug)
-    *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << r->FullName() << " | "
 	       << "	through output port : " << out_port 
 	       << " out vc: " << out_vc << endl;
   outputs->AddRange( out_port, out_vc, out_vc );

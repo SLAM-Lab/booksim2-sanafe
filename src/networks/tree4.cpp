@@ -69,7 +69,7 @@ void Tree4::_ComputeSize( const Configuration& config )
   _n = config.GetInt( "n" );
   assert(_n == 3);
   
-  gK = _k; gN = _n;
+  SimContext::get().gK = _k; SimContext::get().gN = _n;
   
   _nodes = powi( _k, _n );
   

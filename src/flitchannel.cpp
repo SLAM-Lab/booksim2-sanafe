@@ -73,7 +73,7 @@ void FlitChannel::Send(Flit * f) {
 void FlitChannel::ReadInputs() {
   Flit const * const & f = _input;
   if(f && f->watch) {
-    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 	       << "Beginning channel traversal for flit " << f->id
 	       << " with delay " << _delay
 	       << "." << endl;
@@ -84,7 +84,7 @@ void FlitChannel::ReadInputs() {
 void FlitChannel::WriteOutputs() {
   Channel<Flit>::WriteOutputs();
   if(_output && _output->watch) {
-    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+    *SimContext::get().gWatchOut << SimContext::get().getSimTime() << " | " << FullName() << " | "
 	       << "Completed channel traversal for flit " << _output->id
 	       << "." << endl;
   }
