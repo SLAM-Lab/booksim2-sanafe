@@ -64,6 +64,8 @@ TrafficManagerSpike::TrafficManagerSpike(const Configuration& config, const vect
     _received_flits = std::vector<std::queue<int>>(_nodes);
     _message_count = std::vector<long long int>(_nodes, 0ULL);
     //flits = std::vector<map<int, Flit *>>(_subnets);
+
+    INFO("Created spike traffic manager with trace file:%s\n", trace_file.c_str());
 }
 
 TrafficManagerSpike::~TrafficManagerSpike() {
@@ -99,11 +101,13 @@ bool TrafficManagerSpike::OpenTrace() {
     // Skip header
     std::string header;
     getline(trace_stream, header);
+    std::cout << "trace opened\n";
     return true;
 }
 
 void TrafficManagerSpike::PushTraceEvent(SpikeEvent &event)
 {
+    INFO("Pushing trace event\n");
     int src_core = event.src_hw.first * CORES_PER_TILE + event.src_hw.second;
     pending_events[src_core].push(event);
     return;
@@ -267,6 +271,7 @@ void TrafficManagerSpike::ReadNextTrace() {
         std::string token;
 
         // Parse CSV format
+        [[maybe_unused]] long int mid;
         int timestep;
 	std::pair<std::string, int> src_neuron;
         std::pair<int, int> src_hw;
@@ -275,6 +280,9 @@ void TrafficManagerSpike::ReadNextTrace() {
 
         // Parse basic fields
         getline(ss, token, ','); timestep = stoi(token);
+
+        // Parse message ID
+        getline(ss, token, ','); mid = stoi(token);
 
         // Parse src_neuron
         getline(ss, token, ',');
@@ -299,6 +307,11 @@ void TrafficManagerSpike::ReadNextTrace() {
         // Skip hops and spikes
         getline(ss, token, ','); // hops
         getline(ss, token, ','); // spikes
+
+        // Skip timestamps
+        getline(ss, token, ','); // sent
+        getline(ss, token, ','); // received
+        getline(ss, token, ','); // retired/processed
 
         // Get generation latency
         getline(ss, token, ',');
@@ -839,7 +852,7 @@ void TrafficManagerSpike::_Step()
           SimContext::get().gReceiverBuffers[i].pop_front();
           INFO("fid:%d core:%d Rx finished get flit and set %d processing cycles "
               "(new buffer size:%zu)\n",
-              flit_id, i, flit_processing_cycles, gReceiverBuffers[i].size());
+              flit_id, i, flit_processing_cycles, SimContext::get().gReceiverBuffers[i].size());
           assert(flit_id >= 0);
           assert(flit_processing_cycles >= 0);
         }
