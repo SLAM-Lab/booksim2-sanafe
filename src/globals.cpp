@@ -19,6 +19,8 @@ void SimContext::init(const Configuration& config) {
     SimContext::get().gN = config.GetInt("n");
     gC = config.GetInt("c");
     gNodes = config.GetInt("nodes");
+    gReceiverBuffers.resize(gNodes);
+    gReceiverBuffers.resize(gNodes, deque<pair<int, int>>());
 }
 
 SimContext &SimContext::get()

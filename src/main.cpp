@@ -116,9 +116,6 @@ bool Simulate( BookSimConfig const & config )
 
   }
 
-  SimContext::get().gReceiverBusyCycles.resize(SimContext::get().gNodes, 0);
-  SimContext::get().gReceiverBuffers.resize(SimContext::get().gNodes, deque<pair<int, int>>());
-
   /*tcc and characterize are legacy
    *not sure how to use them
    */
