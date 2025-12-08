@@ -28,13 +28,14 @@
 #ifndef _BOOKSIM_LIB_H_
 #define _BOOKSIM_LIB_H_
 
+#include <memory>
 #include "booksim_config.hpp"
 #include "spike.hpp"
 
 BookSimConfig booksim_load_config(const std::vector<std::string> config_vec);
 void booksim_create_spike_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, std::pair<int, int> dest_hw, double generation_latency, double processing_latency );
 void booksim_create_processing_event( int timestep, std::pair<std::string, int> src_neuron, std::pair<int, int> src_hw, double generation_latency );
-double booksim_run(BookSimConfig const config);
+double booksim_run(std::shared_ptr<BookSimConfig> config);
 void booksim_close();
 
 #endif // _BOOKSIM_LIB_H_

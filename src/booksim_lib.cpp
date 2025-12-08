@@ -40,6 +40,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <sstream>
+#include <memory>
 
 BookSimConfig booksim_load_config(const std::vector<std::string> config_vec)
 {
@@ -70,11 +71,11 @@ BookSimConfig booksim_load_config(const std::vector<std::string> config_vec)
   return config;
 }
 
-double booksim_run( BookSimConfig const config)
+double booksim_run( std::shared_ptr<BookSimConfig> config )
 {
   vector<Network *> net;
 
-  int subnets = config.GetInt("subnets");
+  int subnets = config->GetInt("subnets");
   /*To include a new network, must register the network here
    *add an else if statement with the name of the network
    */
@@ -82,17 +83,17 @@ double booksim_run( BookSimConfig const config)
   for (int i = 0; i < subnets; ++i) {
     ostringstream name;
     name << "network_" << i;
-    net[i] = Network::New( config, name.str() );
+    net[i] = Network::New( *config, name.str() );
 
   }
-  SimContext::get().init(config);
+  SimContext::get().init( *config );
 
   /*tcc and characterize are legacy
    *not sure how to use them
    */
 
   assert(SimContext::get().trafficManager == NULL);
-  SimContext::get().trafficManager = TrafficManagerSpike::New( config, net ) ;
+  SimContext::get().trafficManager = TrafficManagerSpike::New( *config, net ) ;
   INFO("Pushing %zu spike events.\n", gSpikeEvents.size());
 
   for (auto &event : SimContext::get().gSpikeEvents)
@@ -118,15 +119,15 @@ double booksim_run( BookSimConfig const config)
   for (int i=0; i<subnets; ++i) {
 
     ///Power analysis
-    if(config.GetInt("sim_power") > 0){
-      Power_Module pnet(net[i], config);
+    if(config->GetInt("sim_power") > 0){
+      Power_Module pnet(net[i], *config);
       pnet.run();
     }
     delete net[i];
   }
 
   int cycle_count = SimContext::get().trafficManager->getTime();
-  double clock_period = config.GetFloat("clock_period");
+  double clock_period = config->GetFloat("clock_period");
   double run_time = cycle_count * clock_period;
 
   return run_time;
