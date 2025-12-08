@@ -33,8 +33,8 @@
 #include "booksim.hpp"
 #include "credit.hpp"
 
-stack<Credit *> Credit::_all;
-stack<Credit *> Credit::_free;
+thread_local stack<Credit *> Credit::_all;
+thread_local stack<Credit *> Credit::_free;
 
 Credit::Credit()
 {

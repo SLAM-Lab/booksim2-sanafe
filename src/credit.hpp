@@ -49,8 +49,8 @@ public:
   static int OutStanding();
 private:
 
-  static stack<Credit *> _all;
-  static stack<Credit *> _free;
+  static thread_local stack<Credit *> _all;
+  static thread_local stack<Credit *> _free;
 
   Credit();
   ~Credit() {}

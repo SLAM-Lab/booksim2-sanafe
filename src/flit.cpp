@@ -37,8 +37,8 @@
 #include "booksim.hpp"
 #include "flit.hpp"
 
-stack<Flit *> Flit::_all;
-stack<Flit *> Flit::_free;
+thread_local stack<Flit *> Flit::_all;
+thread_local stack<Flit *> Flit::_free;
 
 ostream& operator<<( ostream& os, const Flit& f )
 {

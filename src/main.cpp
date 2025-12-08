@@ -115,6 +115,7 @@ bool Simulate( BookSimConfig const & config )
     net[i] = Network::New( config, name.str() );
 
   }
+  SimContext::get().init( config );
 
   /*tcc and characterize are legacy
    *not sure how to use them
@@ -169,7 +170,7 @@ int main( int argc, char **argv )
     return 0;
  } 
 
-  
+
   /*initialize routing, traffic, injection functions
    */
   InitializeRoutingMap( config );

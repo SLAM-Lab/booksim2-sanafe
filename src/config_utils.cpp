@@ -36,6 +36,7 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
+#include <mutex>
 
 #include "config_utils.hpp"
 
@@ -224,6 +225,7 @@ extern "C" int config_input(char * line, int max_size)
   return Configuration::GetTheConfig()->Input(line, max_size);
 }
 
+static std::mutex g_parser_mutex;
 bool ParseArgs(Configuration * cf, int argc, char * * argv)
 {
   bool rc = false;
@@ -235,6 +237,7 @@ bool ParseArgs(Configuration * cf, int argc, char * * argv)
     bool dash = (argv[i][0] =='-');
     if(pos == string::npos && !dash) {
       // parse config file
+      std::lock_guard<std::mutex> lock(g_parser_mutex);
       cf->ParseFile( argv[i] );
       ifstream in(argv[i]);
       cout << "BEGIN Configuration File: " << argv[i] << endl;

@@ -97,8 +97,8 @@ private:
   Flit();
   ~Flit() {}
 
-  static stack<Flit *> _all;
-  static stack<Flit *> _free;
+  static thread_local stack<Flit *> _all;
+  static thread_local stack<Flit *> _free;
 
 };
 

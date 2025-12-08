@@ -70,7 +70,7 @@ BookSimConfig booksim_load_config(const std::vector<std::string> config_vec)
   return config;
 }
 
-double booksim_run( BookSimConfig const & config)
+double booksim_run( BookSimConfig const config)
 {
   vector<Network *> net;
 
@@ -85,6 +85,7 @@ double booksim_run( BookSimConfig const & config)
     net[i] = Network::New( config, name.str() );
 
   }
+  SimContext::get().init(config);
 
   /*tcc and characterize are legacy
    *not sure how to use them

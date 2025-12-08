@@ -16,10 +16,9 @@ Stats * SimContext::getStats(const std::string & name) {
 
 void SimContext::init(const Configuration& config) {
     gK = config.GetInt("k");
-    SimContext::get().gN = config.GetInt("n");
+    gN = config.GetInt("n");
     gC = config.GetInt("c");
-    gNodes = config.GetInt("nodes");
-    gReceiverBuffers.resize(gNodes);
+    gReceiverBusyCycles.resize(gNodes);
     gReceiverBuffers.resize(gNodes, deque<pair<int, int>>());
 }
 
