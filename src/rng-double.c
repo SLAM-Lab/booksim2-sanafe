@@ -23,7 +23,7 @@
 
 double ran_u[KK];           /* the generator state */
 
-#ifdef __STDC__
+#if defined(__STDC__) || defined(_MSC_VER)
 void ranf_array(double aa[], int n)
 #else
 void ranf_array(aa,n)    /* put n new random fractions in aa */
@@ -49,7 +49,7 @@ double *ranf_arr_ptr=&ranf_arr_dummy; /* the next random fraction, or -1 */
 #define TT  70   /* guaranteed separation between streams */
 #define is_odd(s) ((s)&1)
 
-#ifdef __STDC__
+#if defined(__STDC__) || defined(_MSC_VER)
 void ranf_start(long seed)
 #else
 void ranf_start(seed)    /* do this before using ranf_array */

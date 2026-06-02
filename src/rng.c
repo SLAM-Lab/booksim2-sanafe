@@ -24,7 +24,7 @@
 
 long ran_x[KK];                    /* the generator state */
 
-#ifdef __STDC__
+#if defined(__STDC__) || defined(_MSC_VER)
 void ran_array(long aa[],int n)
 #else
 void ran_array(aa,n)    /* put n new random numbers in aa */
@@ -50,7 +50,7 @@ long *ran_arr_ptr=&ran_arr_dummy; /* the next random number, or -1 */
 #define TT  70   /* guaranteed separation between streams */
 #define is_odd(x)  ((x)&1)          /* units bit of x */
 
-#ifdef __STDC__
+#if defined(__STDC__) || defined(_MSC_VER)
 void ran_start(long seed)
 #else
 void ran_start(seed)    /* do this before using ran_array */
