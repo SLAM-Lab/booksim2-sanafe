@@ -35,7 +35,6 @@
 #include "power_module.hpp"
 #include "globals.hpp"
 
-#include <sys/time.h>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -104,17 +103,8 @@ double booksim_run( std::shared_ptr<BookSimConfig> config )
   /*Start the simulation run
    */
 
-  //double total_time; /* Amount of time we've run */
-  struct timeval start_time, end_time; /* Time before/after user code */
-  //total_time = 0.0;
-  gettimeofday(&start_time, NULL);
-
   SimContext::get().trafficManager->Run() ;
 
-
-  gettimeofday(&end_time, NULL);
-  // total_time = ((double)(end_time.tv_sec) + (double)(end_time.tv_usec)/1000000.0)
-  //           - ((double)(start_time.tv_sec) + (double)(start_time.tv_usec)/1000000.0);
 
   for (int i=0; i<subnets; ++i) {
 

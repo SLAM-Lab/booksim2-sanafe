@@ -34,8 +34,7 @@
  *
  *
  */
-#include <sys/time.h>
-
+#include <chrono>
 #include <string>
 #include <cstdlib>
 #include <iostream>
@@ -128,16 +127,12 @@ bool Simulate( BookSimConfig const & config )
    */
 
   double total_time; /* Amount of time we've run */
-  struct timeval start_time, end_time; /* Time before/after user code */
-  total_time = 0.0;
-  gettimeofday(&start_time, NULL);
+  auto start_time = std::chrono::steady_clock::now();
 
-  bool result = SimContext::get().trafficManager->Run() ;
+  bool result = SimContext::get().trafficManager->Run();
 
-
-  gettimeofday(&end_time, NULL);
-  total_time = ((double)(end_time.tv_sec) + (double)(end_time.tv_usec)/1000000.0)
-            - ((double)(start_time.tv_sec) + (double)(start_time.tv_usec)/1000000.0);
+  auto end_time = std::chrono::steady_clock::now();
+  total_time = std::chrono::duration<double>(end_time - start_time).count();
 
   cout<<"Total run time "<<total_time<<endl;
 
