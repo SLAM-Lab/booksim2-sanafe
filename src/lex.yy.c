@@ -1,6 +1,3 @@
-#line 2 "/home/unga/jboyle/scratch/neuro/booksim2/src/lex.yy.c"
-
-#line 4 "/home/unga/jboyle/scratch/neuro/booksim2/src/lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -467,7 +464,7 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 #define YY_NO_INPUT 1
-#line 5 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
+#define YY_NO_UNISTD_H 1
 
 #include <string.h>
 
@@ -482,10 +479,13 @@ extern int config_input(char *, int);
 #undef YY_INPUT
 #define YY_INPUT(b, r, ms) (r = config_input(b, ms))
 
-#line 486 "/home/unga/jboyle/scratch/neuro/booksim2/src/lex.yy.c"
-#line 487 "/home/unga/jboyle/scratch/neuro/booksim2/src/lex.yy.c"
+
+
 
 #define INITIAL 0
+
+
+
 
 #ifndef YY_NO_UNISTD_H
 /* Special case for "unistd.h", since it is non-ANSI. We include it way
@@ -495,40 +495,77 @@ extern int config_input(char *, int);
 #include <unistd.h>
 #endif
 
+
+
 #ifndef YY_EXTRA_TYPE
 #define YY_EXTRA_TYPE void *
 #endif
 
+
+
+
 static int yy_init_globals ( void );
+
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
+
 int yylex_destroy ( void );
+
+
 
 int yyget_debug ( void );
 
+
+
 void yyset_debug ( int debug_flag  );
+
+
 
 YY_EXTRA_TYPE yyget_extra ( void );
 
+
+
 void yyset_extra ( YY_EXTRA_TYPE user_defined  );
+
+
 
 FILE *yyget_in ( void );
 
+
+
 void yyset_in  ( FILE * _in_str  );
+
+
 
 FILE *yyget_out ( void );
 
+
+
 void yyset_out  ( FILE * _out_str  );
+
+
 
 			int yyget_leng ( void );
 
+
+
 char *yyget_text ( void );
+
+
 
 int yyget_lineno ( void );
 
+
+
 void yyset_lineno ( int _line_number  );
+
+
+
+
+
+
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -545,6 +582,7 @@ extern int yywrap ( void );
 #ifndef YY_NO_UNPUT
     
 #endif
+
 
 #ifndef yytext_ptr
 static void yy_flex_strncpy ( char *, const char *, int );
@@ -563,6 +601,13 @@ static int input ( void );
 
 #endif
 
+
+
+
+
+
+
+
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
 #ifdef __ia64__
@@ -573,6 +618,7 @@ static int input ( void );
 #endif /* __ia64__ */
 #endif
 
+
 /* Copy whatever the last rule matched to the standard output. */
 #ifndef ECHO
 /* This used to be an fputs(), but since the string might contain NUL's,
@@ -580,6 +626,8 @@ static int input ( void );
  */
 #define ECHO do { if (fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)
 #endif
+
+
 
 /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
  * is returned in "result".
@@ -617,6 +665,8 @@ static int input ( void );
 
 #endif
 
+
+
 /* No semi-colon after return; correct usage is to write "yyterminate();" -
  * we don't want an extra ';' after the "return" because that will cause
  * some compilers to complain about unreachable statements.
@@ -625,17 +675,23 @@ static int input ( void );
 #define yyterminate() return YY_NULL
 #endif
 
+
 /* Number of entries by which start-condition stack grows. */
 #ifndef YY_START_STACK_INCR
 #define YY_START_STACK_INCR 25
 #endif
+
 
 /* Report a fatal error. */
 #ifndef YY_FATAL_ERROR
 #define YY_FATAL_ERROR(msg) yy_fatal_error( msg )
 #endif
 
+
+
 /* end tables serialization structures and prototypes */
+
+
 
 /* Default declaration of generated scanner - a define so the user can
  * easily add parameters.
@@ -643,10 +699,19 @@ static int input ( void );
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
 
+
+
+
+
+
+
+
+
 extern int yylex (void);
 
 #define YY_DECL int yylex (void)
 #endif /* !YY_DECL */
+
 
 /* Code executed at the beginning of each rule, after yytext and yyleng
  * have been set up.
@@ -655,13 +720,18 @@ extern int yylex (void);
 #define YY_USER_ACTION
 #endif
 
+
+
 /* Code executed at the end of each rule. */
 #ifndef YY_BREAK
 #define YY_BREAK /*LINTED*/break;
 #endif
 
+
+
 #define YY_RULE_SETUP \
 	YY_USER_ACTION
+
 
 /** The main scanner function which does all the work.
  */
@@ -671,6 +741,15 @@ YY_DECL
 	char *yy_cp, *yy_bp;
 	int yy_act;
     
+
+    
+    
+
+
+
+
+
+
 	if ( !(yy_init) )
 		{
 		(yy_init) = 1;
@@ -678,6 +757,8 @@ YY_DECL
 #ifdef YY_USER_INIT
 		YY_USER_INIT;
 #endif
+
+
 
 		if ( ! (yy_start) )
 			(yy_start) = 1;	/* first start state */
@@ -698,13 +779,10 @@ YY_DECL
 		}
 
 	{
-#line 26 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 
 
-#line 29 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
    /* Ignore comments and all spaces */
 
-#line 708 "/home/unga/jboyle/scratch/neuro/booksim2/src/lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -737,20 +815,19 @@ yy_match:
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 71 );
+		while ( yy_current_state != 35 );
+		yy_cp = (yy_last_accepting_cpos);
+		yy_current_state = (yy_last_accepting_state);
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
-		if ( yy_act == 0 )
-			{ /* have to back up */
-			yy_cp = (yy_last_accepting_cpos);
-			yy_current_state = (yy_last_accepting_state);
-			yy_act = yy_accept[yy_current_state];
-			}
 
 		YY_DO_BEFORE_ACTION;
 
+
+
 do_action:	/* This label is used only to access EOF actions. */
+
 
 		switch ( yy_act )
 	{ /* beginning of action switch */
@@ -763,57 +840,46 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 31 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 ;
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 32 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 ;
 	YY_BREAK
 case 3:
 /* rule 3 can match eol */
 YY_RULE_SETUP
-#line 34 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 { lineno++; }
 	YY_BREAK
 /* Commands */
 case 4:
 YY_RULE_SETUP
-#line 38 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 { yylval.name = strdup( yytext ); return STR; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 40 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 { yylval.num = atoi( yytext ); return NUM; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 42 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 { yylval.fnum = atof( yytext ); return FNUM; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 44 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 { yylval.fnum = atof( yytext ); return FNUM;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 46 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 { yylval.name = strdup( yytext ); return STR; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 48 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 { return yytext[0]; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 50 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
 ECHO;
 	YY_BREAK
-#line 817 "/home/unga/jboyle/scratch/neuro/booksim2/src/lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -880,7 +946,8 @@ case YY_STATE_EOF(INITIAL):
 
 			else
 				{
-				yy_cp = (yy_c_buf_p);
+				yy_cp = (yy_last_accepting_cpos);
+				yy_current_state = (yy_last_accepting_state);
 				goto yy_find_action;
 				}
 			}
@@ -946,6 +1013,10 @@ case YY_STATE_EOF(INITIAL):
 		} /* end of scanning one token */
 	} /* end of user's declarations */
 } /* end of yylex */
+
+
+
+
 
 /* yy_get_next_buffer - try to read in a new buffer
  *
@@ -1090,6 +1161,7 @@ static int yy_get_next_buffer (void)
 	return ret_val;
 }
 
+
 /* yy_get_previous_state - get the state just before the EOB char was reached */
 
     static yy_state_type yy_get_previous_state (void)
@@ -1119,6 +1191,7 @@ static int yy_get_next_buffer (void)
 	return yy_current_state;
 }
 
+
 /* yy_try_NUL_trans - try to make a transition on the NUL character
  *
  * synopsis
@@ -1146,6 +1219,7 @@ static int yy_get_next_buffer (void)
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
+
 
 #ifndef YY_NO_UNPUT
 
@@ -1221,6 +1295,7 @@ static int yy_get_next_buffer (void)
 	*(yy_c_buf_p) = '\0';	/* preserve yytext */
 	(yy_hold_char) = *++(yy_c_buf_p);
 
+
 	return c;
 }
 #endif	/* ifndef YY_NO_INPUT */
@@ -1242,6 +1317,7 @@ static int yy_get_next_buffer (void)
 	yy_init_buffer( YY_CURRENT_BUFFER, input_file );
 	yy_load_buffer_state(  );
 }
+
 
 /** Switch to a different input buffer.
  * @param new_buffer The new input buffer.
@@ -1277,6 +1353,7 @@ static int yy_get_next_buffer (void)
 	 */
 	(yy_did_buffer_switch_on_eof) = 1;
 }
+
 
 static void yy_load_buffer_state  (void)
 {
@@ -1316,6 +1393,7 @@ static void yy_load_buffer_state  (void)
 	return b;
 }
 
+
 /** Destroy the buffer.
  * @param b a buffer created with yy_create_buffer()
  * 
@@ -1334,6 +1412,7 @@ static void yy_load_buffer_state  (void)
 
 	yyfree( (void *) b  );
 }
+
 
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
@@ -1358,8 +1437,11 @@ static void yy_load_buffer_state  (void)
         b->yy_bs_column = 0;
     }
 
-        b->yy_is_interactive = file ? (isatty( fileno(file) ) > 0) : 0;
+
     
+        b->yy_is_interactive = 0;
+    
+
 	errno = oerrno;
 }
 
@@ -1422,6 +1504,7 @@ void yypush_buffer_state (YY_BUFFER_STATE new_buffer )
 	(yy_did_buffer_switch_on_eof) = 1;
 }
 
+
 /** Removes and deletes the top of the stack, if present.
  *  The next element becomes the new top.
  *  
@@ -1442,6 +1525,7 @@ void yypop_buffer_state (void)
 	}
 }
 
+
 /* Allocates the stack if it does not exist.
  *  Guarantees space for at least one push.
  */
@@ -1461,6 +1545,7 @@ static void yyensure_buffer_stack (void)
 								);
 		if ( ! (yy_buffer_stack) )
 			YY_FATAL_ERROR( "out of dynamic memory in yyensure_buffer_stack()" );
+
 
 		memset((yy_buffer_stack), 0, num_to_alloc * sizeof(struct yy_buffer_state*));
 
@@ -1487,6 +1572,10 @@ static void yyensure_buffer_stack (void)
 		(yy_buffer_stack_max) = num_to_alloc;
 	}
 }
+
+
+
+
 
 /** Setup the input buffer state to scan directly from a user-specified character buffer.
  * @param base the character buffer
@@ -1523,6 +1612,9 @@ YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size )
 	return b;
 }
 
+
+
+
 /** Setup the input buffer state to scan a string. The next call to yylex() will
  * scan from a @e copy of @a str.
  * @param yystr a NUL-terminated string to scan
@@ -1536,6 +1628,9 @@ YY_BUFFER_STATE yy_scan_string (const char * yystr )
     
 	return yy_scan_bytes( yystr, (int) strlen(yystr) );
 }
+
+
+
 
 /** Setup the input buffer state to scan the given bytes. The next call to yylex() will
  * scan from a @e copy of @a bytes.
@@ -1574,6 +1669,16 @@ YY_BUFFER_STATE yy_scan_bytes  (const char * yybytes, int  _yybytes_len )
 	return b;
 }
 
+
+
+
+
+
+
+
+
+
+
 #ifndef YY_EXIT_FAILURE
 #define YY_EXIT_FAILURE 2
 #endif
@@ -1601,7 +1706,11 @@ static void yynoreturn yy_fatal_error (const char* msg )
 		} \
 	while ( 0 )
 
+
+
 /* Accessor  methods (get/set functions) to struct members. */
+
+
 
 /** Get the current line number.
  * 
@@ -1609,8 +1718,13 @@ static void yynoreturn yy_fatal_error (const char* msg )
 int yyget_lineno  (void)
 {
     
+    
     return yylineno;
 }
+
+
+
+
 
 /** Get the input stream.
  * 
@@ -1620,6 +1734,8 @@ FILE *yyget_in  (void)
         return yyin;
 }
 
+
+
 /** Get the output stream.
  * 
  */
@@ -1628,6 +1744,8 @@ FILE *yyget_out  (void)
         return yyout;
 }
 
+
+
 /** Get the length of the current token.
  * 
  */
@@ -1635,6 +1753,7 @@ int yyget_leng  (void)
 {
         return yyleng;
 }
+
 
 /** Get the current token.
  * 
@@ -1645,6 +1764,9 @@ char *yyget_text  (void)
         return yytext;
 }
 
+
+
+
 /** Set the current line number.
  * @param _line_number line number
  * 
@@ -1652,8 +1774,14 @@ char *yyget_text  (void)
 void yyset_lineno (int  _line_number )
 {
     
+    
     yylineno = _line_number;
 }
+
+
+
+
+
 
 /** Set the input stream. This does not discard the current
  * input buffer.
@@ -1666,20 +1794,29 @@ void yyset_in (FILE *  _in_str )
         yyin = _in_str ;
 }
 
+
+
 void yyset_out (FILE *  _out_str )
 {
         yyout = _out_str ;
 }
+
+
+
 
 int yyget_debug  (void)
 {
         return yy_flex_debug;
 }
 
+
+
 void yyset_debug (int  _bdebug )
 {
         yy_flex_debug = _bdebug ;
 }
+
+
 
 static int yy_init_globals (void)
 {
@@ -1687,12 +1824,19 @@ static int yy_init_globals (void)
      * This function is called from yylex_destroy(), so don't allocate here.
      */
 
+
     (yy_buffer_stack) = NULL;
     (yy_buffer_stack_top) = 0;
     (yy_buffer_stack_max) = 0;
     (yy_c_buf_p) = NULL;
     (yy_init) = 0;
     (yy_start) = 0;
+
+
+
+
+
+
 
 /* Defined in main.c */
 #ifdef YY_STDINIT
@@ -1709,6 +1853,7 @@ static int yy_init_globals (void)
     return 0;
 }
 
+
 /* yylex_destroy is for both reentrant and non-reentrant scanners. */
 int yylex_destroy  (void)
 {
@@ -1724,6 +1869,10 @@ int yylex_destroy  (void)
 	yyfree((yy_buffer_stack) );
 	(yy_buffer_stack) = NULL;
 
+
+
+
+
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
      * yylex() is called, initialization will occur. */
     yy_init_globals( );
@@ -1731,9 +1880,13 @@ int yylex_destroy  (void)
     return 0;
 }
 
+
+
 /*
  * Internal utility routines.
  */
+
+
 
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char* s1, const char * s2, int n )
@@ -1744,6 +1897,8 @@ static void yy_flex_strncpy (char* s1, const char * s2, int n )
 		s1[i] = s2[i];
 }
 #endif
+
+
 
 #ifdef YY_NEED_STRLEN
 static int yy_flex_strlen (const char * s )
@@ -1756,10 +1911,14 @@ static int yy_flex_strlen (const char * s )
 }
 #endif
 
+
+
 void *yyalloc (yy_size_t  size )
 {
 			return malloc(size);
 }
+
+
 
 void *yyrealloc  (void * ptr, yy_size_t  size )
 {
@@ -1774,14 +1933,21 @@ void *yyrealloc  (void * ptr, yy_size_t  size )
 	return realloc(ptr, size);
 }
 
+
+
 void yyfree (void * ptr )
 {
 			free( (char *) ptr );	/* see yyrealloc() for (char *) cast */
 }
 
+
 #define YYTABLES_NAME "yytables"
 
-#line 50 "/home/unga/jboyle/scratch/neuro/booksim2/src/config.l"
+
+
+
+
+
 
 
 void yyerror( char * msg )

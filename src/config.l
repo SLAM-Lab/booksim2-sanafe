@@ -1,5 +1,8 @@
 %option noinput
 %option nounput
+%option nounistd
+%option never-interactive
+%option noline
 
 %{
 
