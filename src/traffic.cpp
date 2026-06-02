@@ -276,7 +276,7 @@ int ShuffleTrafficPattern::dest(int source)
 {
   assert((source >= 0) && (source < _nodes));
   int const shifted = source << 1;
-  return ((shifted & (_nodes - 1)) | bool(shifted & _nodes));
+  return ((shifted & (_nodes - 1)) | ((shifted & _nodes) ? 1 : 0));
 }
 
 DigitPermutationTrafficPattern::DigitPermutationTrafficPattern(int nodes, int k,
