@@ -11,9 +11,11 @@ project(booksim
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-add_compile_options(
-    -Wall -pedantic -Werror
-)
+if(MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -pedantic -Werror)
+endif()
 
 # Define options BEFORE adding subdirectory
 option(BOOKSIM_GENERATE_PARSER "Generate parser using bison and flex" ON)
